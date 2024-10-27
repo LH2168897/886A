@@ -69,22 +69,13 @@ void competition_initialize() {}
 
 
 
-
-
-
-	
-
-
-
-	
-
 void powerDrive(int forward, int turn){
 	left_drive.move(forward+turn);
 	right_drive.move(forward-turn);
 
 }
 double Inchtoticks(int distance) {
-	return distance * 900 / (4.125 * 3.14159265);
+	return distance * 900 / (4 * 3.14159265) *7/3;
 }
 
 	
@@ -142,12 +133,16 @@ void Turndrive(double Distance){
 
 	
 
-/*void autonomous(){
-	movep(1000);
-	Turndrive(1000);
+void autonomous(){
+movep(10);
+//auto 1
+
+
+//auto 2
+
 
 }
-/*
+
 
 
 /**
