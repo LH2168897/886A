@@ -8,11 +8,15 @@
  */
 
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
-	pros::MotorGroup right_drive({4,9});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
-	pros::MotorGroup left_drive({-7,-10});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
-	pros::Motor eater (2);
-	pros::Motor elevator(5);
+	pros::MotorGroup right_drive({15,12,20});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
+	pros::MotorGroup left_drive({-5,-9,-3});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
+	pros::Motor eater(-13);
+	pros::Motor elevator(10);
+	pros::Motor 6bar(15)
 	pros::adi::Pneumatics clamp('h',false); 
+	pros::adi::Pneumatics clamp2('a',false);
+  	pros::Imu imu(21);
+
 
 void on_center_button() {
 	static bool pressed = false;
@@ -74,24 +78,37 @@ void powerDrive(int forward, int turn){
 	right_drive.move(forward-turn);
 
 }
+
+int speedLimit(int speed, int max_speed){
+	if(speed>max_speed){
+		return(max_speed);
+	} 
+	else if(speed<-max_speed){
+		return(-max_speed);
+	}
+	else{
+		return(speed);
+	}
+}
+
 double Inchtoticks(int distance) {
-	return distance * 900 / (4 * 3.14159265) *7/3;
+	return distance * 300 / (4 * 3.14159265) *7/3;
 }
 
 	
-	void movep(int Distance){
-		Inchtoticks(Distance);
+	void movep(double Distance, int max_speed){
+		int target = Inchtoticks(Distance);
 		left_drive.tare_position();
-		int error = Distance - left_drive.get_position();
+		int error = target - left_drive.get_position();
 		int tt = millis();
-		double kP = 2, kD = 7;
+		double kP = 0.35, kD = 0.5;
 		int integral = 0;
 		int pasterror;
 		int derivative;
 
-		while (millis() - tt < 3000){
+		while (millis() - tt < 1000){
 			pasterror=error;
-			error = Distance - left_drive.get_position();
+			error = target - left_drive.get_position();
 			derivative=pasterror-error;
 			if (abs(error) > 1){
 				int tt = millis();
@@ -99,7 +116,7 @@ double Inchtoticks(int distance) {
 			left_drive.move(error*kP + derivative*kD);
 			right_drive.move(error*kP + derivative*kD);
 
-			powerDrive(error*kP + integral, 0);
+			powerDrive(speedLimit(error*kP + integral, max_speed), 0);
 
 			delay(20);
 		}
@@ -109,17 +126,17 @@ double Inchtoticks(int distance) {
 	}
 
 
-void Turndrive(double Distance){
-	Inchtoticks(Distance);
-	left_drive.tare_position();
-	int error = Distance-left_drive.get_position();
+void Turndrive(double degrees){
+	imu.tare_rotation();
+	double error = degrees - imu.get_rotation();
 	int trackingTime = pros::millis();
-	double kP = 1.65, kD = 5;
+	int timeout = pros::millis();
+	double kP = 1, kD = 5;
 	int pasterror;
 	int derivative;
 
-	while (pros:: millis() - trackingTime < 800){
-		error = Distance- left_drive.get_position();
+	while ((pros:: millis() - trackingTime < 800) && (pros::millis()-timeout < 3000)){
+error = degrees - imu.get_rotation();
 		derivative+pasterror-error;
 		if (abs(error) > 3){
 			trackingTime = pros::millis();
@@ -130,18 +147,116 @@ void Turndrive(double Distance){
 
 }
 
+void blueleftside(){
+movep(-30, 90);
+	delay(1000);
+	clamp.toggle();
+	eater.move(127);
+	delay(50);
+	movep(-4, 90);
+	Turndrive(-90);  
+	eater.move(-127);
+	elevator.move(115);// eating the first ring 
+	movep(25,50);
+	/*Turndrive(-100);
+	movep(15, 90);
+	movep(-3, 90);
+	Turndrive(85);
+	delay(100);
+	movep(5, 90);
+	Turndrive(40);
+	movep(5, 90);
+	movep(-30, 90);*/
+	movep(-20, 90);		                                                                                                                                                                                                                                                              
+}
 
-	
+void bluerightside(){
+movep(-30, 90);
+	delay(1000);
+	clamp.toggle();
+	eater.move(127);
+	delay(50);
+	movep(-4, 90);
+	Turndrive(90);  
+	eater.move(-127);
+	elevator.move(115);// eating the first ring 
+	movep(25,50);
+	Turndrive(100);
+	movep(15, 90);
+	movep(-3, 90);
+	Turndrive(-85);
+	delay(100);
+	movep(5, 90);
+	Turndrive(-40);
+	movep(5, 90);
+	movep(-30, 90);
+}
+
+void redrightside(){
+movep(-30, 90);
+	delay(1000);
+	clamp.toggle();
+	eater.move(127);
+	delay(50);
+	movep(-5, 90);
+	Turndrive(-90);  
+	eater.move(-127);
+	elevator.move(115);// eating the first ring 
+	movep(45,50);
+	delay(3000);
+	/*Turndrive(-100);
+	movep(15, 90);
+	movep(-3, 90);
+	Turndrive(85);
+	delay(100);
+	movep(5, 90);
+	Turndrive(40);
+	movep(5, 90);
+	movep(-30, 90);*/
+	Turndrive(180);
+	movep(40, 90);		                                                                                                                                                                                                                                                              
+}
+
+void redleftside(){
+movep(-30, 90);
+	delay(1000);
+	clamp.toggle();
+	eater.move(127);
+	delay(50);
+	movep(-4, 90);
+	Turndrive(90);  
+	eater.move(-127);
+	elevator.move(115);// eating the first ring 
+	movep(25,50);
+	Turndrive(100);
+	movep(15, 90);
+	movep(-3, 90);
+	Turndrive(-85);
+	delay(100);
+	movep(5, 90);
+	Turndrive(40);
+	movep(5, 90);
+	movep(-30, 90);
+}
+
+
+void back(){
+	movep(-30, 90);
+	delay(1000);
+	clamp.toggle();
+	eater.move(127);
+	delay(50);
+	movep(-4, 90);
+}
+
 
 void autonomous(){
-movep(10);
-//auto 1
-
+	
+//auto 
+redrightside();
+}
 
 //auto 2
-
-
-}
 
 
 
@@ -188,6 +303,10 @@ void opcontrol() {
     	if(master.get_digital_new_press(DIGITAL_A)){
       		clamp.toggle();
     	}
+		else if(master.get_digital_new_press(DIGITAL_B)){
+			clamp2.toggle();
+		}
+
 		
 
 
