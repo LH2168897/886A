@@ -8,15 +8,15 @@
  */
 
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
-	pros::MotorGroup right_drive({15,12,20});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
-	pros::MotorGroup left_drive({-5,-9,-3});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
+	pros::MotorGroup right_drive({5,9,3});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
+	pros::MotorGroup left_drive({-16,-12,-20});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
 	pros::Motor eater(-13);
 	pros::Motor elevator(10);
-	pros::Motor 6bar(15)
+	pros::Motor sixbar(15);
 	pros::adi::Pneumatics clamp('h',false); 
 	pros::adi::Pneumatics clamp2('a',false);
-  	pros::Imu imu(21);
-
+	pros::Imu imu(21);
+	
 
 void on_center_button() {
 	static bool pressed = false;
@@ -277,12 +277,14 @@ void opcontrol() {
 
 
 
+
 	while (true) {
 		// Drive
 		int dir = master.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
 		int turn = master.get_analog(ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
 		left_drive.move(dir + turn);                       // Sets left motor voltage
 		right_drive.move(dir - turn);
+	
 
 		//Arm
 		if(master.get_digital(DIGITAL_L2)){
@@ -298,14 +300,20 @@ void opcontrol() {
 			elevator.move(0);
 		}
 
+		if(master.get_digital(DIGITAL_R1)){
+			sixbar.move(100);
+		}
+		if(master.get_digital(DIGITAL_R2)){
+			sixbar.move(-50);
+		}
 	
 		//pnu
     	if(master.get_digital_new_press(DIGITAL_A)){
       		clamp.toggle();
     	}
-		else if(master.get_digital_new_press(DIGITAL_B)){
-			clamp2.toggle();
-		}
+		//else if(master.get_digital_new_press(DIGITAL_B)){
+			//clamp2.toggle();
+		//}
 
 		
 
