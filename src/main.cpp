@@ -136,7 +136,7 @@ void Turndrive(double degrees){
 	int derivative;
 
 	while ((pros:: millis() - trackingTime < 800) && (pros::millis()-timeout < 3000)){
-error = degrees - imu.get_rotation();
+	error = degrees - imu.get_rotation();
 		derivative+pasterror-error;
 		if (abs(error) > 3){
 			trackingTime = pros::millis();
@@ -249,11 +249,21 @@ void back(){
 	movep(-4, 90);
 }
 
+void skills(){
+	movep(-20, 30);
+	delay(1000);
+	clamp.toggle();
+	Turndrive(-120);
+	movep(50, 90);
+}
+
 
 void autonomous(){
 	
 //auto 
-redrightside();
+// redrightside();
+// skills
+skills();
 }
 
 //auto 2
@@ -292,7 +302,7 @@ void opcontrol() {
 			elevator.move(-100);
 		}
 		else if(master.get_digital(DIGITAL_L1)){
-			eater.move(-127);
+			eater.move(-100);
 			elevator.move(100);
 		}
 		else{
@@ -301,20 +311,24 @@ void opcontrol() {
 		}
 
 		if(master.get_digital(DIGITAL_R1)){
-			sixbar.move(100);
+			sixbar.move(127);
 		}
-		if(master.get_digital(DIGITAL_R2)){
-			sixbar.move(-50);
+		else if(master.get_digital(DIGITAL_R2)){
+			sixbar.move(-127);
 		}
+		else{
+			sixbar.move(0);
+		}
+
 	
 		//pnu
     	if(master.get_digital_new_press(DIGITAL_A)){
       		clamp.toggle();
+			clamp2.toggle();
     	}
 		//else if(master.get_digital_new_press(DIGITAL_B)){
 			//clamp2.toggle();
 		//}
-
 		
 
 
