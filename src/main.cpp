@@ -10,8 +10,7 @@
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
 	pros::MotorGroup right_drive({5,9,3});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
 	pros::MotorGroup left_drive({-16,-12,-20});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
-	pros::Motor eater(-13);
-	pros::Motor elevator(10);
+	pros::MotorGroup intake({-13,10});
 	pros::Motor sixbar(15);
 	pros::adi::Pneumatics clamp('h',false); 
 	pros::adi::Pneumatics clamp2('a',false);
@@ -36,7 +35,7 @@ void on_center_button() {
  */
 void initialize() {
 	pros::lcd::initialize();
-	pros::lcd::set_text(1, "Hello PROS User!");
+	pros::lcd::set_text(1, "nelson is short af");
 
 	pros::lcd::register_btn1_cb(on_center_button);
 }
@@ -150,13 +149,13 @@ void Turndrive(double degrees){
 void blueleftside(){
 movep(-30, 90);
 	delay(1000);
-	clamp.toggle();
-	eater.move(127);
+	clamp2.toggle();
+	intake.move(127);
 	delay(50);
-	movep(-4, 90);
+	//movep(-4, 90);
 	Turndrive(-90);  
-	eater.move(-127);
-	elevator.move(115);// eating the first ring 
+	intake.move(-127);
+	intake.move(115);// eating the first ring 
 	movep(25,50);
 	/*Turndrive(-100);
 	movep(15, 90);
@@ -174,12 +173,12 @@ void bluerightside(){
 movep(-30, 90);
 	delay(1000);
 	clamp.toggle();
-	eater.move(127);
+	intake.move(127);
 	delay(50);
 	movep(-4, 90);
 	Turndrive(90);  
-	eater.move(-127);
-	elevator.move(115);// eating the first ring 
+	intake.move(-127);
+	intake.move(115);// eating the first ring 
 	movep(25,50);
 	Turndrive(100);
 	movep(15, 90);
@@ -193,17 +192,16 @@ movep(-30, 90);
 }
 
 void redrightside(){
-movep(-30, 90);
-	delay(1000);
-	clamp.toggle();
-	eater.move(127);
+movep(-25,70);
+	delay(500);
+	clamp2.toggle();
+	intake.move(-127);
 	delay(50);
-	movep(-5, 90);
-	Turndrive(-90);  
-	eater.move(-127);
-	elevator.move(115);// eating the first ring 
+	//movep(-5, 90);
+	Turndrive(-110);  
+	intake.move(-127);// eating the first ring 
 	movep(45,50);
-	delay(3000);
+	delay(2000);
 	/*Turndrive(-100);
 	movep(15, 90);
 	movep(-3, 90);
@@ -213,20 +211,19 @@ movep(-30, 90);
 	Turndrive(40);
 	movep(5, 90);
 	movep(-30, 90);*/
-	Turndrive(180);
-	movep(40, 90);		                                                                                                                                                                                                                                                              
+	Turndrive(90);
+	movep(60, 90);		                                                                                                                                                                                                                                                              
 }
 
 void redleftside(){
 movep(-30, 90);
 	delay(1000);
 	clamp.toggle();
-	eater.move(127);
+	intake.move(127);
 	delay(50);
 	movep(-4, 90);
 	Turndrive(90);  
-	eater.move(-127);
-	elevator.move(115);// eating the first ring 
+	intake.move(115);// eating the first ring 
 	movep(25,50);
 	Turndrive(100);
 	movep(15, 90);
@@ -244,16 +241,17 @@ void back(){
 	movep(-30, 90);
 	delay(1000);
 	clamp.toggle();
-	eater.move(127);
+	intake.move(127);
 	delay(50);
 	movep(-4, 90);
 }
 
 void skills(){
-	movep(-20, 30);
+	movep(-7, 30);
 	delay(1000);
-	clamp.toggle();
-	Turndrive(-120);
+	clamp2.toggle();
+	Turndrive(-130);
+	intake.move(127);
 	movep(50, 90);
 }
 
@@ -263,7 +261,9 @@ void autonomous(){
 //auto 
 // redrightside();
 // skills
-skills();
+//skills();
+//blueleftside();
+redrightside();
 }
 
 //auto 2
@@ -298,16 +298,13 @@ void opcontrol() {
 
 		//Arm
 		if(master.get_digital(DIGITAL_L2)){
-			eater.move(127);
-			elevator.move(-100);
+			intake.move(127);
 		}
 		else if(master.get_digital(DIGITAL_L1)){
-			eater.move(-100);
-			elevator.move(100);
+			intake.move(-100);
 		}
 		else{
-			eater.move(0);
-			elevator.move(0);
+			intake.move(0);
 		}
 
 		if(master.get_digital(DIGITAL_R1)){
@@ -323,13 +320,16 @@ void opcontrol() {
 	
 		//pnu
     	if(master.get_digital_new_press(DIGITAL_A)){
-      		clamp.toggle();
+      		//clamp.toggle();
 			clamp2.toggle();
     	}
 		//else if(master.get_digital_new_press(DIGITAL_B)){
 			//clamp2.toggle();
 		//}
-		
+		if(master.get_digital_new_press(DIGITAL_B)){
+      		clamp.toggle();
+			//clamp2.toggle();999998
+		}
 
 
 pros::delay(20);  
