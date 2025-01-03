@@ -10,7 +10,7 @@
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
 	pros::MotorGroup right_drive({5,9,3});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
 	pros::MotorGroup left_drive({-16,-12,-20});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
-	pros::MotorGroup intake({-13,10});
+	pros::MotorGroup intake({13,10});
 	pros::Motor sixbar(15);
 	pros::adi::Pneumatics clamp('h',false); 
 	pros::adi::Pneumatics clamp2('a',false);
@@ -198,9 +198,9 @@ movep(-25,70);
 	intake.move(-127);
 	delay(50);
 	//movep(-5, 90);
-	Turndrive(-110);  
+	Turndrive(-100);  
 	intake.move(-127);// eating the first ring 
-	movep(45,50);
+	movep(55,90);
 	delay(2000);
 	/*Turndrive(-100);
 	movep(15, 90);
@@ -260,7 +260,7 @@ void autonomous(){
 	
 //auto 
 // redrightside();
-// skills
+ //skills();
 //skills();
 //blueleftside();
 redrightside();
