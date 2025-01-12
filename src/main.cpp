@@ -36,7 +36,8 @@ void on_center_button() {
 void initialize() {
 	pros::lcd::initialize();
 	pros::lcd::set_text(1, "nelson is short af");
-
+	imu.reset(); 
+	delay(1000); 
 	pros::lcd::register_btn1_cb(on_center_button);
 }
 
@@ -147,93 +148,89 @@ void Turndrive(double degrees){
 }
 
 void blueleftside(){
-movep(-30, 90);
-	delay(1000);
+	movep(-26,70);
+	delay(500);
 	clamp2.toggle();
-	intake.move(127);
-	delay(50);
-	//movep(-4, 90);
-	Turndrive(-90);  
-	intake.move(-127);
-	intake.move(115);// eating the first ring 
-	movep(25,50);
-	/*Turndrive(-100);
-	movep(15, 90);
-	movep(-3, 90);
-	Turndrive(85);
+	delay(200);
+	intake.move(-100);
+	delay(200);
+	Turndrive(95);
+	intake.move(-100);// eating the first ring 
+	movep(15,70);
+	delay(400);
+	Turndrive(-80);
+	intake.move(0);
+	movep(50, 80);
 	delay(100);
-	movep(5, 90);
-	Turndrive(40);
-	movep(5, 90);
-	movep(-30, 90);*/
-	movep(-20, 90);		                                                                                                                                                                                                                                                              
+	Turndrive(220);
+	delay(100);
+	movep(-50, 80);
+	delay(100);
+	clamp2.toggle();	                                                                                                                                                                                                                                                              
 }
 
 void bluerightside(){
-movep(-30, 90);
-	delay(1000);
-	clamp.toggle();
-	intake.move(127);
-	delay(50);
-	movep(-4, 90);
-	Turndrive(90);  
-	intake.move(-127);
-	intake.move(115);// eating the first ring 
-	movep(25,50);
-	Turndrive(100);
-	movep(15, 90);
-	movep(-3, 90);
-	Turndrive(-85);
+	movep(-26,70);
+	delay(500);
+	clamp2.toggle();
+	delay(200);
+	intake.move(-100);
+	delay(200);
+	Turndrive(-95);
+	intake.move(-100);// eating the first ring 
+	movep(15,70);
+	delay(400);
+	Turndrive(80);
+	movep(50, 80);
 	delay(100);
-	movep(5, 90);
-	Turndrive(-40);
-	movep(5, 90);
-	movep(-30, 90);
+	Turndrive(-220);
+	delay(100);
+	movep(-50, 80);
+	delay(100);
+	clamp2.toggle();
 }
 
 void redrightside(){
-movep(-25,70);
+	movep(-26,70);
 	delay(500);
 	clamp2.toggle();
-	intake.move(-127);
-	delay(50);
-	//movep(-5, 90);
-	Turndrive(-100);  
-	intake.move(-127);// eating the first ring 
-	movep(55,90);
-	delay(2000);
-	/*Turndrive(-100);
-	movep(15, 90);
-	movep(-3, 90);
-	Turndrive(85);
+	delay(200);
+	intake.move(-100);
+	delay(200);
+	Turndrive(-95);
+	intake.move(-100);// eating the first ring 
+	movep(15,70);
+	delay(400);
+	Turndrive(80);
+	intake.move(0);
+	movep(50, 80);
 	delay(100);
-	movep(5, 90);
-	Turndrive(40);
-	movep(5, 90);
-	movep(-30, 90);*/
-	Turndrive(90);
-	movep(60, 90);		                                                                                                                                                                                                                                                              
+	Turndrive(-220);
+	delay(100);
+	movep(-50, 80);
+	delay(100);
+	clamp2.toggle();
 }
 
 void redleftside(){
-movep(-30, 90);
-	delay(1000);
-	clamp.toggle();
-	intake.move(127);
-	delay(50);
-	movep(-4, 90);
-	Turndrive(90);  
-	intake.move(115);// eating the first ring 
-	movep(25,50);
-	Turndrive(100);
-	movep(15, 90);
-	movep(-3, 90);
-	Turndrive(-85);
+	movep(-26,70);
+	delay(500);
+	clamp2.toggle();
+	delay(200);
+	intake.move(-100);
+	delay(200);
+	Turndrive(95);
+	intake.move(-100);// eating the first ring 
+	delay(400);
+	movep(15,70);
+	Turndrive(-80);
+	movep(50, 80);
 	delay(100);
-	movep(5, 90);
-	Turndrive(40);
-	movep(5, 90);
-	movep(-30, 90);
+	Turndrive(220);
+	delay(100);
+	movep(-50, 80);
+	delay(100);
+	clamp2.toggle();
 }
 
 
@@ -259,11 +256,11 @@ void skills(){
 void autonomous(){
 	
 //auto 
-// redrightside();
- //skills();
 //skills();
+//redrightside();
 //blueleftside();
-redrightside();
+//redleftside();
+//bluerightside();
 }
 
 //auto 2
