@@ -11,7 +11,7 @@
 	pros::MotorGroup right_drive({5,9,3});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
 	pros::MotorGroup left_drive({-16,-12,-20});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
 	pros::MotorGroup intake({13,10});
-	pros::Motor sixbar(15);
+	pros::Motor lebron(15);
 	pros::adi::Pneumatics clamp('h',false); 
 	pros::adi::Pneumatics clamp2('a',false);
 	pros::Imu imu(21);
@@ -96,8 +96,8 @@ double Inchtoticks(int distance) {
 }
 
 	
-	void movep(double Distance, int max_speed){
-		int target = Inchtoticks(Distance);
+void movep(double Distance, int max_speed){
+		int target = Inchtoticks(-1*Distance);
 		left_drive.tare_position();
 		int error = target - left_drive.get_position();
 		int tt = millis();
@@ -148,8 +148,8 @@ void Turndrive(double degrees){
 }
 
 void blueleftside(){
-	movep(-26,70);
-	delay(500);
+	movep(-27,70);
+	delay(600);
 	clamp2.toggle();
 	delay(200);
 	intake.move(-100);
@@ -157,21 +157,16 @@ void blueleftside(){
 	Turndrive(95);
 	intake.move(-100);// eating the first ring 
 	movep(15,70);
-	delay(400);
-	Turndrive(-80);
-	intake.move(0);
-	movep(50, 80);
-	delay(100);
-	Turndrive(220);
-	delay(100);
-	movep(-50, 80);
-	delay(100);
-	clamp2.toggle();	                                                                                                                                                                                                                                                              
+	delay(1400);
+	Turndrive(185);
+	movep(200,60);
+	delay(1500);
+	movep(0,0);                                                                                                                                                                                                                                                           
 }
 
 void bluerightside(){
-	movep(-26,70);
-	delay(500);
+	movep(-27,70);
+	delay(600);
 	clamp2.toggle();
 	delay(200);
 	intake.move(-100);
@@ -179,20 +174,16 @@ void bluerightside(){
 	Turndrive(-95);
 	intake.move(-100);// eating the first ring 
 	movep(15,70);
-	delay(400);
-	Turndrive(80);
-	movep(50, 80);
-	delay(100);
-	Turndrive(-220);
-	delay(100);
-	movep(-50, 80);
-	delay(100);
-	clamp2.toggle();
+	delay(1400);
+	Turndrive(-185);
+	movep(200,60);
+	delay(1500);
+	movep(0,0);
 }
 
 void redrightside(){
-	movep(-26,70);
-	delay(500);
+	movep(-27,70);
+	delay(600);
 	clamp2.toggle();
 	delay(200);
 	intake.move(-100);
@@ -200,37 +191,28 @@ void redrightside(){
 	Turndrive(-95);
 	intake.move(-100);// eating the first ring 
 	movep(15,70);
-	delay(400);
-	Turndrive(80);
-	intake.move(0);
-	movep(50, 80);
-	delay(100);
-	Turndrive(-220);
-	delay(100);
-	movep(-50, 80);
-	delay(100);
-	clamp2.toggle();
+	delay(1400);
+	Turndrive(-185);
+	movep(200,60);
+	delay(1500);
+	movep(0,0);
 }
 
 void redleftside(){
-	movep(-26,70);
-	delay(500);
+	movep(-27,70);
+	delay(600);
 	clamp2.toggle();
 	delay(200);
 	intake.move(-100);
 	delay(200);
 	Turndrive(95);
 	intake.move(-100);// eating the first ring 
-	delay(400);
 	movep(15,70);
-	Turndrive(-80);
-	movep(50, 80);
-	delay(100);
-	Turndrive(220);
-	delay(100);
-	movep(-50, 80);
-	delay(100);
-	clamp2.toggle();
+	delay(1400);
+	Turndrive(185);
+	movep(200,60);
+	delay(1500);
+	movep(0,0);
 }
 
 
@@ -244,23 +226,19 @@ void back(){
 }
 
 void skills(){
-	movep(-7, 30);
-	delay(1000);
-	clamp2.toggle();
-	Turndrive(-130);
 	intake.move(127);
-	movep(50, 90);
+	delay(300);
+	intake.move(0);
 }
 
 
 void autonomous(){
-	
-//auto 
-//skills();
+skills();
+//bluerightside();
 //redrightside();
+//bluerightside();
 //blueleftside();
 //redleftside();
-//bluerightside();
 }
 
 //auto 2
@@ -283,11 +261,11 @@ void autonomous(){
 void opcontrol() {
 
 
-
+	int brownStatus = 0;
 
 	while (true) {
 		// Drive
-		int dir = master.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
+		int dir = -1*master.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
 		int turn = master.get_analog(ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
 		left_drive.move(dir + turn);                       // Sets left motor voltage
 		right_drive.move(dir - turn);
@@ -304,15 +282,36 @@ void opcontrol() {
 			intake.move(0);
 		}
 
-		if(master.get_digital(DIGITAL_R1)){
-			sixbar.move(127);
+		if(master.get_digital_new_press(DIGITAL_R1)){
+			if (brownStatus != 2)
+				brownStatus++;
+			/*if (brownStatus == 0) {
+				lebron.move_absolute(100,75); //replace with collect thing
+				brownStatus++;
+			}
+			else if (brownStatus == 1) {
+				lebron.move_absolute(200,75); // replace with high stake
+				brownStatus++;
+			}*/
 		}
-		else if(master.get_digital(DIGITAL_R2)){
-			sixbar.move(-127);
+		else if(master.get_digital_new_press(DIGITAL_R2)){
+			if (brownStatus != 0)
+				brownStatus--;
+			/*if (brownStatus == 1) {
+				lebron.move_absolute(0,75); //replace start
+				brownStatus++;
+			}
+			else if (brownStatus == 2) {
+				lebron.move_absolute(200,75); // replace with high stake
+				brownStatus++;
+			}*/
 		}
-		else{
-			sixbar.move(0);
-		}
+		if (brownStatus == 0)
+			lebron.move_absolute(0,127); //start height
+		else if (brownStatus == 1)
+			lebron.move_absolute(495,127); //ring height
+		else if (brownStatus == 2)
+			lebron.move_absolute(2000,127); //high stake height;
 
 	
 		//pnu
