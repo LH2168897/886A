@@ -309,9 +309,9 @@ void opcontrol() {
 		if (brownStatus == 0)
 			lebron.move_absolute(0,127); //start height
 		else if (brownStatus == 1)
-			lebron.move_absolute(495,127); //ring height
+			lebron.move_absolute(485,127); //ring height
 		else if (brownStatus == 2)
-			lebron.move_absolute(2000,127); //high stake height;
+			lebron.move_absolute(1700,127); //high stake height;
 
 	
 		//pnu
