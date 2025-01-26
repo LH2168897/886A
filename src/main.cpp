@@ -8,13 +8,14 @@
  */
 
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
-	pros::MotorGroup right_drive({5,9,3});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
-	pros::MotorGroup left_drive({-16,-12,-20});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
-	pros::MotorGroup intake({13,10});
-	pros::Motor lebron(15);
+	pros::MotorGroup right_drive({15,5,7});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
+	pros::MotorGroup left_drive({-16,-10,-9});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
+	pros::MotorGroup intake({3,14});
+	pros::Motor lebron(4);
 	pros::adi::Pneumatics clamp('h',false); 
 	pros::adi::Pneumatics clamp2('a',false);
-	pros::Imu imu(21);
+	pros::Imu imu(8);
+	pros::Optical optical(19);
 	
 
 void on_center_button() {
