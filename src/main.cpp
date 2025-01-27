@@ -150,7 +150,7 @@ void Turndrive(double degrees){
 void blueleftside(){
 	movep(-27,70);
 	delay(600);
-	doinker.toggle();
+	clamp.toggle();
 	delay(200);
 	intake.move(-100);
 	delay(200);
@@ -167,7 +167,7 @@ void blueleftside(){
 void bluerightside(){
 	movep(-27,70);
 	delay(600);
-	doinker.toggle();
+	clamp.toggle();
 	delay(200);
 	intake.move(-100);
 	delay(200);
@@ -201,7 +201,7 @@ void redrightside(){
 void redleftside(){
 	movep(-27,70);
 	delay(600);
-	doinker.toggle();
+	clamp.toggle();
 	delay(200);
 	intake.move(-100);
 	delay(200);
@@ -314,9 +314,9 @@ void opcontrol() {
 		if (brownStatus == 0)
 			lebron.move_absolute(0,127); //start height
 		else if (brownStatus == 1)
-			lebron.move_absolute(495,127); //ring height
+			lebron.move_absolute(485,127); //ring height
 		else if (brownStatus == 2)
-			lebron.move_absolute(2000,127); //high stake height;
+			lebron.move_absolute(1700,127); //high stake height;
 
 	
 		//pnu
