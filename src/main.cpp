@@ -184,7 +184,7 @@ void bluerightside(){
 
 void redrightside(){
 	movep(-27,70);
-	delay(600);
+	delay(600)
 	clamp2.toggle();
 	delay(200);
 	intake.move(-100);
