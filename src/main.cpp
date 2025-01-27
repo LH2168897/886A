@@ -8,13 +8,13 @@
  */
 
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
-	pros::MotorGroup right_drive({15,5,7});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
+	pros::MotorGroup right_drive({20,5,7});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
 	pros::MotorGroup left_drive({-16,-10,-9});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
 	pros::MotorGroup intake({3,14});
 	pros::Motor lebron(4);
 	pros::adi::Pneumatics clamp('h',false); 
-	pros::adi::Pneumatics clamp2('a',false);
-	pros::Imu imu(8);
+	pros::adi::Pneumatics doinker('a',false);
+	pros::Imu imu(2);
 	pros::Optical optical(19);
 
 void on_center_button() {
@@ -97,7 +97,7 @@ double Inchtoticks(int distance) {
 
 	
 void movep(double Distance, int max_speed){
-		int target = Inchtoticks(-1*Distance);
+		int target = Inchtoticks(Distance);
 		left_drive.tare_position();
 		int error = target - left_drive.get_position();
 		int tt = millis();
@@ -150,7 +150,7 @@ void Turndrive(double degrees){
 void blueleftside(){
 	movep(-27,70);
 	delay(600);
-	clamp2.toggle();
+	doinker.toggle();
 	delay(200);
 	intake.move(-100);
 	delay(200);
@@ -167,7 +167,7 @@ void blueleftside(){
 void bluerightside(){
 	movep(-27,70);
 	delay(600);
-	clamp2.toggle();
+	doinker.toggle();
 	delay(200);
 	intake.move(-100);
 	delay(200);
@@ -184,7 +184,7 @@ void bluerightside(){
 void redrightside(){
 	movep(-27,70);
 	delay(600);
-	clamp2.toggle();
+	clamp.toggle();
 	delay(200);
 	intake.move(-100);
 	delay(200);
@@ -201,7 +201,7 @@ void redrightside(){
 void redleftside(){
 	movep(-27,70);
 	delay(600);
-	clamp2.toggle();
+	doinker.toggle();
 	delay(200);
 	intake.move(-100);
 	delay(200);
@@ -226,9 +226,13 @@ void back(){
 }
 
 void skills(){
-	intake.move(127);
-	delay(300);
+	intake.move(-127);
+	delay(1500);
 	intake.move(0);
+	movep(12,127);
+	Turndrive(-90);
+	movep(-20, 35);
+	clamp.toggle();
 }
 
 
@@ -318,14 +322,14 @@ void opcontrol() {
 		//pnu
     	if(master.get_digital_new_press(DIGITAL_A)){
       		//clamp.toggle();
-			clamp2.toggle();
+			doinker.toggle();
     	}
 		//else if(master.get_digital_new_press(DIGITAL_B)){
-			//clamp2.toggle();
+			//doinker.toggle();
 		//}
 		if(master.get_digital_new_press(DIGITAL_B)){
       		clamp.toggle();
-			//clamp2.toggle();999998
+			//doinker.toggle();
 		}
 
 
