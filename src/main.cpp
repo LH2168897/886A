@@ -227,11 +227,60 @@ void back(){
 
 void skills(){
 	intake.move(-127);
-	delay(1500);
+	delay(1000);
 	intake.move(0);
 	movep(12,127);
+	Turndrive(100);
+	movep(-20, 55);
+	delay(500);
+	clamp.toggle();
+	delay(200);
+	intake.move(-127);
+	Turndrive(90);
+	movep(15,127);
+	Turndrive(90);
+	movep(8,127);
+	delay(200);
+	Turndrive(-50);
+	movep(23,80);
+	Turndrive(150);
+	movep(25,110);
+	Turndrive(-15);
+	movep(5,127);
+	Turndrive(-105);
+	movep(10,127);
+	Turndrive(-135);
+	movep(-30,127);
+	delay(200);
+	clamp.toggle();
+	Turndrive(-150);
+	movep(100,127);
+	Turndrive(90);
+	movep(30,127);
+	Turndrive(90);
+
+	//otherside
+	movep(-20,55);
+	delay(500);
+	clamp.toggle();
+	delay(200);
+	intake.move(-127);
 	Turndrive(-90);
-	movep(-20, 35);
+	movep(15,127);
+	Turndrive(-90);
+	movep(8,127);
+	delay(200);
+	Turndrive(50);
+	movep(23,80);
+	Turndrive(-150);
+	movep(25,110);
+	Turndrive(15);
+	movep(5,127);
+	Turndrive(105);
+	movep(10,127);
+	Turndrive(135);
+	movep(-30,127);
+	delay(200);
 	clamp.toggle();
 }
 
@@ -239,9 +288,8 @@ void skills(){
 void autonomous(){
 skills();
 //bluerightside();
-//redrightside();
-//bluerightside();
 //blueleftside();
+//redrightside();
 //redleftside();
 }
 
@@ -262,21 +310,45 @@ skills();
  * operator control task will be stopped. Re-enabling the robot will restart the
  * task, not resume it from where it left off.
  */
+
+bool side = false; //blue = false; red = true
+bool check = false;
+
 void opcontrol() {
 
-
 	int brownStatus = 0;
+	optical.set_led_pwm(100);
 
 	while (true) {
 		// Drive
-		int dir = 
-		master.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
+		int dir = master.get_analog(ANALOG_LEFT_Y);    // Gets amount forward/backward from left joystick
 		int turn = master.get_analog(ANALOG_RIGHT_X);  // Gets the turn left/right from right joystick
 		left_drive.move(dir + turn);                       // Sets left motor voltage
 		right_drive.move(dir - turn);
 	
+		pros::lcd::set_text(2, std::to_string(optical.get_hue()));
 
-		//Arm
+		//Intake
+		double hue = optical.get_hue();
+       	optical.set_led_pwm(100);
+		check = false;
+		if (side && hue >= 200){ //if side is red color is blue
+			delay(75);
+			check = true;
+			intake.move(0);
+			delay(170);
+			intake.move(127);
+			check = false;
+		}
+		else if (side == false && hue <= 17){ //if side is blue color is red
+			delay(75);
+			check = true;
+			intake.move(0);
+			delay(170);
+			intake.move(127);
+			check = false;
+		}
+		delay(10);
 		if(master.get_digital(DIGITAL_L2)){
 			intake.move(127);
 		}
@@ -287,6 +359,12 @@ void opcontrol() {
 			intake.move(0);
 		}
 
+		if(master.get_digital_new_press(DIGITAL_X)){
+			side = !side;
+    	}
+
+
+		//Arm
 		if(master.get_digital_new_press(DIGITAL_R1)){
 			if (brownStatus != 2)
 				brownStatus++;
