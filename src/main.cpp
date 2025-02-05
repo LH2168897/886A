@@ -126,7 +126,7 @@ void movep(double Distance, int max_speed){
 	}
 
 
-void Turndrive(double degrees){
+void Turndrive(double degrees, int timeLimit){
 	imu.tare_rotation();
 	double error = degrees - imu.get_rotation();
 	int trackingTime = pros::millis();
@@ -135,7 +135,7 @@ void Turndrive(double degrees){
 	int pasterror;
 	int derivative;
 
-	while ((pros:: millis() - trackingTime < 800) && (pros::millis()-timeout < 3000)){
+	while ((pros:: millis() - trackingTime < 800) && (pros::millis()-timeout < timeLimit)){
 	error = degrees - imu.get_rotation();
 		derivative+pasterror-error;
 		if (abs(error) > 3){
@@ -154,11 +154,11 @@ void blueleftside(){
 	delay(200);
 	intake.move(-100);
 	delay(200);
-	Turndrive(95);
+	Turndrive(95,3000);
 	intake.move(-100);// eating the first ring 
 	movep(15,70);
 	delay(1400);
-	Turndrive(185);
+	Turndrive(185,3000);
 	movep(200,60);
 	delay(1500);
 	movep(0,0);                                                                                                                                                                                                                                                           
@@ -171,11 +171,11 @@ void bluerightside(){
 	delay(200);
 	intake.move(-100);
 	delay(200);
-	Turndrive(-95);
+	Turndrive(-95,3000);
 	intake.move(-100);// eating the first ring 
 	movep(15,70);
 	delay(1400);
-	Turndrive(-185);
+	Turndrive(-185,3000);
 	movep(200,60);
 	delay(1500);
 	movep(0,0);
@@ -188,11 +188,11 @@ void redrightside(){
 	delay(200);
 	intake.move(-100);
 	delay(200);
-	Turndrive(-95);
+	Turndrive(-95,3000);
 	intake.move(-100);// eating the first ring 
 	movep(15,70);
 	delay(1400);
-	Turndrive(-185);
+	Turndrive(-185,3000);
 	movep(200,60);
 	delay(1500);
 	movep(0,0);
@@ -205,11 +205,11 @@ void redleftside(){
 	delay(200);
 	intake.move(-100);
 	delay(200);
-	Turndrive(95);
+	Turndrive(95,3000);
 	intake.move(-100);// eating the first ring 
 	movep(15,70);
 	delay(1400);
-	Turndrive(185);
+	Turndrive(185,750);
 	movep(200,60);
 	delay(1500);
 	movep(0,0);
@@ -230,36 +230,36 @@ void skills(){
 	delay(1000);
 	intake.move(0);
 	movep(12,127);
-	Turndrive(100);
+	Turndrive(100,750);
 	movep(-20, 55);
 	delay(500);
 	clamp.toggle();
 	delay(200);
 	intake.move(-127);
-	Turndrive(90);
+	Turndrive(90,750);
 	movep(15,127);
-	Turndrive(90);
+	Turndrive(90,750);
 	movep(8,127);
 	delay(200);
-	Turndrive(-50);
+	Turndrive(-50,750);
 	movep(23,80);
-	Turndrive(150);
+	Turndrive(150,750);
 	movep(25,110);
-	Turndrive(-15);
+	Turndrive(-15,750);
 	movep(5,127);
-	Turndrive(-105);
+	Turndrive(-105,750);
 	movep(10,127);
-	Turndrive(-135);
+	Turndrive(-135,750);
 	movep(-30,127);
 	delay(200);
 	clamp.toggle();
-	Turndrive(-150);
+	Turndrive(-150,750);
 	movep(100,127);
-	Turndrive(90);
+	Turndrive(90,750);
 	movep(30,127);
-	Turndrive(90);
+	Turndrive(90,750);
 
-	//otherside
+	/*//otherside
 	movep(-20,55);
 	delay(500);
 	clamp.toggle();
@@ -281,7 +281,7 @@ void skills(){
 	Turndrive(135);
 	movep(-30,127);
 	delay(200);
-	clamp.toggle();
+	clamp.toggle();*/
 }
 
 
@@ -333,7 +333,6 @@ void opcontrol() {
        	optical.set_led_pwm(100);
 		check = false;
 		if (side && hue >= 200){ //if side is red color is blue
-			delay(75);
 			check = true;
 			intake.move(0);
 			delay(170);
@@ -341,7 +340,6 @@ void opcontrol() {
 			check = false;
 		}
 		else if (side == false && hue <= 17){ //if side is blue color is red
-			delay(75);
 			check = true;
 			intake.move(0);
 			delay(170);
