@@ -1,4 +1,6 @@
 #include "main.h"
+#include "lemlib/api.hpp" // IWYU pragma: keep
+#include "lemlib/chassis/trackingWheel.hpp"
 
 /**
  * A callback function for LLEMU's center button.
@@ -8,15 +10,66 @@
  */
 
 	pros::Controller master(pros::E_CONTROLLER_MASTER);
-	pros::MotorGroup right_drive({20,5,7});    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
-	pros::MotorGroup left_drive({-16,-10,-9});  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
+	pros::MotorGroup right_drive({20,5,7},pros::MotorGearset::blue);    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
+	pros::MotorGroup left_drive({-16,-10,-9},pros::MotorGearset::blue);  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
+	pros::Motor secondStage(14);
 	pros::MotorGroup intake({3,14});
+	pros::Motor suck(3);
 	pros::Motor lebron(4);
 	pros::adi::Pneumatics clamp('h',false); 
 	pros::adi::Pneumatics doinker('a',false);
 	pros::Imu imu(2);
 	pros::Optical optical(19);
+	// create a v5 rotation sensor on port 1
+pros::Rotation vertical_encoder(13);
 
+// drivetrain settings
+lemlib::Drivetrain drivetrain(&left_drive, // left motor group
+	&right_drive, // right motor group
+	12.625, // 10 inch track width
+	lemlib::Omniwheel::NEW_275, // using new 4" omnis
+	480, // drivetrain rpm is 360
+	2 // horizontal drift is 2 (for now)
+);
+lemlib::TrackingWheel vertical_tracking_wheel(&vertical_encoder, lemlib::Omniwheel::NEW_2, -1.125);
+
+lemlib::OdomSensors sensors(&vertical_tracking_wheel, // vertical tracking wheel 1, set to null
+	nullptr, // vertical tracking wheel 2, set to nullptr as we are using IMEs
+	nullptr, // horizontal tracking wheel 1
+	nullptr, // horizontal tracking wheel 2, set to nullptr as we don't have a second one
+	&imu // inertial sensor
+);
+
+// lateral PID controller
+lemlib::ControllerSettings lateral_controller(15, // proportional gain (kP)
+                                              0, // integral gain (kI)
+                                              5, // derivative gain (kD)
+                                              3, // anti windup
+                                              1, // small error range, in inches
+                                              100, // small error range timeout, in milliseconds
+                                              3, // large error range, in inches
+                                              500, // large error range timeout, in milliseconds
+                                              20 // maximum acceleration (slew)
+);
+
+// angular PID controller
+lemlib::ControllerSettings angular_controller(2, // proportional gain (kP)
+                                              0, // integral gain (kI)
+                                              10, // derivative gain (kD)
+                                              3, // anti windup
+                                              1, // small error range, in degrees
+                                              100, // small error range timeout, in milliseconds
+                                              3, // large error range, in degrees
+                                              500, // large error range timeout, in milliseconds
+                                              0 // maximum acceleration (slew)
+);
+
+// create the chassis
+lemlib::Chassis chassis(drivetrain, // drivetrain settings
+                        lateral_controller, // lateral PID settings
+                        angular_controller, // angular PID settings
+                        sensors // odometry sensors
+);
 void on_center_button() {
 	static bool pressed = false;
 	pressed = !pressed;
@@ -33,14 +86,22 @@ void on_center_button() {
  * All other competition modes are blocked by initialize; it is recommended
  * to keep execution time for this mode under a few seconds.
  */
+// initialize function. Runs on program startup
 void initialize() {
-	pros::lcd::initialize();
-	pros::lcd::set_text(1, "nelson is short af");
-	imu.reset(); 
-	delay(1000); 
-	pros::lcd::register_btn1_cb(on_center_button);
+    pros::lcd::initialize(); // initialize brain screen
+    chassis.calibrate(); // calibrate sensors
+    // print position to brain screen
+    pros::Task screen_task([&]() {
+        while (true) {
+            // print robot location to the brain screen
+            pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
+            pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
+            pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
+            // delay to save resources
+            pros::delay(20);
+        }
+    });
 }
-
 /**
  * Runs while the robot is in the disabled state of Field Management System or
  * the VEX Competition Switch, following either autonomous or opcontrol. When
@@ -96,28 +157,28 @@ double Inchtoticks(int distance) {
 }
 
 	
-void movep(double Distance, int max_speed){
+void movep(double Distance, int max_speed, int timeOut = 1000){
 		int target = Inchtoticks(Distance);
 		left_drive.tare_position();
 		int error = target - left_drive.get_position();
 		int tt = millis();
-		double kP = 0.35, kD = 0.5;
+		double kP = 0.35, kD = 1;
 		int integral = 0;
 		int pasterror;
 		int derivative;
 
-		while (millis() - tt < 1000){
-			pasterror=error;
+		while (millis() - tt < timeOut){
 			error = target - left_drive.get_position();
 			derivative=pasterror-error;
 			if (abs(error) > 1){
 				int tt = millis();
 			}
-			left_drive.move(error*kP + derivative*kD);
-			right_drive.move(error*kP + derivative*kD);
-
-			powerDrive(speedLimit(error*kP + integral, max_speed), 0);
-
+			// left_drive.move(error*kP + derivative*kD);
+			// right_drive.move(error*kP + derivative*kD);
+			
+			powerDrive(speedLimit(error*kP - derivative*kD, max_speed), 0);
+			
+			pasterror=error;
 			delay(20);
 		}
 		 powerDrive ( 0,0);
@@ -126,22 +187,24 @@ void movep(double Distance, int max_speed){
 	}
 
 
-void Turndrive(double degrees, int timeLimit){
+void Turndrive(double degrees, int timeLimit = 3000){
 	imu.tare_rotation();
 	double error = degrees - imu.get_rotation();
 	int trackingTime = pros::millis();
 	int timeout = pros::millis();
-	double kP = 1, kD = 5;
+	double kP = 1, kD = 1.5;
 	int pasterror;
 	int derivative;
 
-	while ((pros:: millis() - trackingTime < 800) && (pros::millis()-timeout < timeLimit)){
-	error = degrees - imu.get_rotation();
-		derivative+pasterror-error;
-		if (abs(error) > 3){
+	while ((pros:: millis() - trackingTime < 1000) && (pros::millis()-timeout < timeLimit)){
+		error = degrees - imu.get_rotation();
+		derivative=pasterror-error;
+		if (abs(error) > 0.5){
 			trackingTime = pros::millis();
 					}
-	powerDrive(0, error *kP + derivative*kD);
+		powerDrive(0, error *kP - derivative*kD);
+		pasterror=error;
+		delay(20);
 	}
 	powerDrive(0, 0);
 
@@ -154,11 +217,11 @@ void blueleftside(){
 	delay(200);
 	intake.move(-100);
 	delay(200);
-	Turndrive(95,3000);
+	Turndrive(95);
 	intake.move(-100);// eating the first ring 
 	movep(15,70);
 	delay(1400);
-	Turndrive(185,3000);
+	Turndrive(185);
 	movep(200,60);
 	delay(1500);
 	movep(0,0);                                                                                                                                                                                                                                                           
@@ -171,11 +234,11 @@ void bluerightside(){
 	delay(200);
 	intake.move(-100);
 	delay(200);
-	Turndrive(-95,3000);
+	Turndrive(-95);
 	intake.move(-100);// eating the first ring 
 	movep(15,70);
 	delay(1400);
-	Turndrive(-185,3000);
+	Turndrive(-185);
 	movep(200,60);
 	delay(1500);
 	movep(0,0);
@@ -188,11 +251,11 @@ void redrightside(){
 	delay(200);
 	intake.move(-100);
 	delay(200);
-	Turndrive(-95,3000);
+	Turndrive(-95);
 	intake.move(-100);// eating the first ring 
 	movep(15,70);
 	delay(1400);
-	Turndrive(-185,3000);
+	Turndrive(-185);
 	movep(200,60);
 	delay(1500);
 	movep(0,0);
@@ -205,88 +268,179 @@ void redleftside(){
 	delay(200);
 	intake.move(-100);
 	delay(200);
-	Turndrive(95,3000);
+	Turndrive(95);
 	intake.move(-100);// eating the first ring 
 	movep(15,70);
 	delay(1400);
-	Turndrive(185,750);
+	Turndrive(185);
 	movep(200,60);
 	delay(1500);
 	movep(0,0);
 }
 
-
-void back(){
-	movep(-30, 90);
-	delay(1000);
-	clamp.toggle();
-	intake.move(127);
-	delay(50);
-	movep(-4, 90);
-}
-
 void skills(){
+
+	/*! - red right
+	//alliance stake
 	intake.move(-127);
 	delay(1000);
-	intake.move(0);
-	movep(12,127);
-	Turndrive(100,750);
-	movep(-20, 55);
-	delay(500);
-	clamp.toggle();
-	delay(200);
-	intake.move(-127);
-	Turndrive(90,750);
-	movep(15,127);
-	Turndrive(90,750);
-	movep(8,127);
-	delay(200);
-	Turndrive(-50,750);
-	movep(23,80);
-	Turndrive(150,750);
-	movep(25,110);
-	Turndrive(-15,750);
-	movep(5,127);
-	Turndrive(-105,750);
-	movep(10,127);
-	Turndrive(-135,750);
-	movep(-30,127);
-	delay(200);
-	clamp.toggle();
-	Turndrive(-150,750);
-	movep(100,127);
-	Turndrive(90,750);
-	movep(30,127);
-	Turndrive(90,750);
+	intake.move(0);*/
 
-	/*//otherside
-	movep(-20,55);
+	//clamp MG
+	movep(10,90,1000);
+	Turndrive(-93,1000);
+	movep(-18, 55, 1000);
 	delay(500);
 	clamp.toggle();
 	delay(200);
-	intake.move(-127);
-	Turndrive(-90);
-	movep(15,127);
-	Turndrive(-90);
-	movep(8,127);
-	delay(200);
-	Turndrive(50);
-	movep(23,80);
-	Turndrive(-150);
-	movep(25,110);
-	Turndrive(15);
-	movep(5,127);
-	Turndrive(105);
-	movep(10,127);
+
+	/*//#1
+	intake.move(-100);
+	Turndrive(100,1000);
+	movep(19,127);
+	delay(500);
+	//#2
+	Turndrive(100,1000);
+	movep(18,127);
+	delay(500);*/
+
+	/*
+	//score
+	lebron.move_absolute(1700,127);
+	movep(5,100);
+	delay(100);
+	movep(-5,100);
+
+	lebron.move_absolute(485,127);
+	intake.move(-100);
+	delay(250);
+
+	//#3+4+5
 	Turndrive(135);
-	movep(-30,127);
-	delay(200);
-	clamp.toggle();*/
+	movep(28,110);
+	delay(750);
+	movep(7,110);
+	Turndrive(180);
+	movep(15,127);
+	//pos corner
+	Turndrive(-90);
+	movep(-20,127);
+	clamp.toggle();
+	delay(250);
+
+	//transfer to red left
+	movep(15,127);
+	intake.move(0);
+	Turndrive(150);
+	movep(10,127);
+	delay(250);
+	movep(-90,127);
+
+	*/
+
+	//! - red left (copy)
+
+	/*
+	//transfer to blue left + one ring
+	movep(15,127);
+	Turndrive(-30);
+	movep(-10,127);
+	delay(250);
+	movep(80,127);
+	intake.move(-127);
+	delay(250);
+	movep(10,127);
+	intake.move(0);
+	movep(60,127);
+
+	//! - blue left
+	//push goal
+	Turndrive(-90);
+	movep(-25,55);
+	delay(250);
+	clamp.toggle();
+	Turndrive(-165);
+	movep(-50,127);
+	clamp.toggle();
+	delay(500);
+
+	//last stack
+	intake.move(-127);
+	movep(80,127);
+	Turndrive(180);
+	movep(-20,55);
+	clamp.toggle();
+	Turndrive(-70);
+	movep(30,127);
+	Turndrive(-90);
+	movep(30,127);
+	Turndrive(-90);
+	movep(30,127);
+	Turndrive(45);
+	movep(20,127);
+	Turndrive(120);
+	movep(-40,127);
+
+	*/
 }
 
+void skills2(){ 
+	chassis.setPose(0, -61, 0);
+
+	//alliance stake
+	secondStage.move(-127);
+	delay(1000);
+	secondStage.move(0);
+
+	//red right
+	chassis.moveToPose(0, -47, 0, 2000, {.forwards = true,  .lead = .8, .minSpeed = 60}); //mg clamp
+	delay(1000);
+	chassis.moveToPose(0, -47, -90, 2000, {.forwards = true,  .lead = .8, .minSpeed = 60});
+	chassis.moveToPose(24, -47, -90,2000, {.forwards = false,  .lead = .8, .minSpeed = 60});
+	chassis.waitUntilDone();
+	clamp.toggle();
+	delay(1000);
+	intake.move(-100); //ring 1
+	delay(2000);
+	chassis.moveToPose(24, -47, 0, 2000, {.forwards = true});
+	chassis.moveToPose(24, -24, 0, 2000, {.forwards = true});
+	delay(1000); //ring 2
+	chassis.moveToPose(24, -24, 90, 2000, {.forwards = true,  .lead = .8, .minSpeed = 60}); //ring 2
+	chassis.moveToPose(53, -24, 90, 2000, {.forwards = true,  .lead = .8, .minSpeed = 60});
+	delay(3000);
+	chassis.moveToPose(51, -24, 18, 2000, {.forwards = true,  .lead = .8, .minSpeed = 60});
+	chassis.moveToPose(65, 9, 18, 2000, {.forwards = true, .lead = .6, .minSpeed = 60}); //ring 3
+	delay(1000);
+	chassis.moveToPose(51, -24, 18, 2000, {.forwards = false,  .lead = .8, .minSpeed = 60});
+	delay(2000);
+	chassis.moveToPose(51, -24, 180, 2000, {.forwards = true,  .lead = .8, .minSpeed = 60});
+	delay(1000);
+	chassis.moveToPose(51, -69, 180, 2000, {.forwards = true,  .lead = .8, .minSpeed = 60});
+	chassis.moveToPose(51, -33, 180, 2000, {.forwards = false,  .lead = .8, .minSpeed = 60});
+	delay(2000);
+	chassis.moveToPose(51, -33, -225, 2000, {.forwards = true,  .lead = .8, .minSpeed = 60});
+	chassis.moveToPose(63, -45, -225, 2000, {.forwards = true,  .lead = .8, .minSpeed = 60});
+
+	chassis.moveToPose(63, -45, -45, 2000, {.forwards = true, .lead = .8, .minSpeed = 60});
+
+
+
+
+	/*chassis.moveToPose(50, -40, 180, 3000, {.forwards = true, .lead = .6, .minSpeed = 60});//ring 4
+	delay(1000);
+	chassis.moveToPose(50, -55, 180, 5000, {.forwards = true,   .lead = .6, .minSpeed = 60});//ring 5
+	chassis.moveToPose(40, -40, 90, 5000, {.forwards = false,  .lead = .2, .minSpeed = 60});//ring 6
+	chassis.moveToPose(60, -40, 90, 5000, {.forwards = true,  .lead = .6, .minSpeed = 60});
+	chassis.moveToPose(60, -60, 0, 5000, {.forwards = false,  .lead = .6, .minSpeed = 60});//dump goal*/
+
+
+
+
+}
 
 void autonomous(){
-skills();
+	skills2();
+//skills();
 //bluerightside();
 //blueleftside();
 //redrightside();
@@ -311,7 +465,7 @@ skills();
  * task, not resume it from where it left off.
  */
 
-bool side = false; //blue = false; red = true
+bool side = true; //blue = false; red = true
 bool check = false;
 
 void opcontrol() {
