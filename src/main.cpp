@@ -2,7 +2,6 @@
 #include "lemlib/api.hpp" // IWYU pragma: keep
 #include "lemlib/chassis/trackingWheel.hpp"
 #include "pros/motors.h"
-#include <algorithm>
 
 /**
  * A callback function for LLEMU's center button.
@@ -406,20 +405,20 @@ void skills2(){
 	delay(1000);
 	intake.move(-100); //ring 1
 	delay(1000);
-	chassis.moveToPose(24, -47, 0, 2000, {.forwards = true});
-	chassis.moveToPose(24, -24, 0, 2000, {.forwards = true, .minSpeed = 80});
+	chassis.moveToPose(24, -47, 0, 1000, {.forwards = true});
+	chassis.moveToPose(24, -24, 0, 1000, {.forwards = true, .minSpeed = 80});
 	delay(1000); //ring 2
-	chassis.moveToPose(24, -24, 90, 2000, {.forwards = true, .minSpeed = 60}); //ring 2
-	chassis.moveToPose(53, -24, 90, 2000, {.forwards = true,  .minSpeed = 60});
+	chassis.moveToPose(24, -24, 90, 1000, {.forwards = true, .minSpeed = 60}); //ring 2
+	chassis.moveToPose(53, -24, 90, 1000, {.forwards = true,  .minSpeed = 60});
 	delay(1000);
-	chassis.moveToPose(51, -24, 18, 2000, {.forwards = true,   .minSpeed = 60});
+	chassis.moveToPose(51, -24, 18, 1000, {.forwards = true,   .minSpeed = 60});
 	chassis.moveToPose(60, 9, 18, 2000, {.forwards = true, .minSpeed = 60}); //ring 3
 	delay(1000);
-	chassis.moveToPose(49, -10, 18, 1000, {.forwards = false,  .minSpeed = 60});
+	chassis.moveToPose(49, -10, 18, 2000, {.forwards = false,  .minSpeed = 60});
 	delay(1000);
 	chassis.turnToHeading(180, 2000);
 	delay(1000);
-	chassis.moveToPose(49, -60, 180, 3000, {.forwards = true,   .minSpeed = 60});
+	chassis.moveToPose(49, -60, 180, 2000, {.forwards = true,   .minSpeed = 60});
 	chassis.waitUntilDone(); 
 
 	chassis.moveToPose(49, -40, 180, 2000, {.forwards = false,   .minSpeed = 60});
@@ -431,20 +430,21 @@ void skills2(){
 
 	chassis.moveToPose(70, -60, -30, 2000, {.forwards = false, .maxSpeed = 70}); //drop goal 
 	chassis.waitUntilDone();
-	delay(1000);
+	delay(500);
 	clamp.toggle();
 	intake.move(0);
-
+	
 	chassis.moveToPose(60, -41, -30, 2000);
 	delay(1000);
 	chassis.moveToPose(60, -41, 90, 2000);
 	
-	chassis.moveToPose(-18, -45, 90, 4000, {.forwards = false, .maxSpeed = 100}); //mg goal
-	chassis.moveToPose(-24, -45, 90, 4000, {.forwards = false, .maxSpeed = 55});
+	//red left
+	chassis.moveToPose(-15, -51, 90, 4000, {.forwards = false, .maxSpeed = 100}); //mg goal
+	chassis.moveToPose(-20, -51, 90, 2000, {.forwards = false, .maxSpeed = 55});
 	chassis.waitUntilDone();
 	delay(1000);
 	clamp.toggle();
-	chassis.moveToPose(-19, -41, 0, 2000); //ring 1
+	chassis.moveToPose(-20, -51, 0, 2000); //ring 1
 	intake.move(-100);
 	chassis.moveToPose(-19, -19, 0, 2000);
 	delay(1000);
@@ -453,68 +453,22 @@ void skills2(){
 	chassis.moveToPose(-45, -16, -35, 2000); //ring 3
 	chassis.moveToPose(-57, 8, -35, 2000);
 	chassis.moveToPose(-45, -16, -35, 2000, {.forwards = false});
-	chassis.moveToPose(-45, -16, -180, 2000);
-	chassis.moveToPose(-49, -45, -180, 2000);
+	chassis.moveToPose(-45, -16, -180, 2000); //ring4
+	chassis.moveToPose(-49, -45, -180, 3000);
 	chassis.moveToPose(-47, -45, -180, 2000);
 	chassis.moveToPose(-49, -45, -90, 2000);
 	chassis.moveToPose(-49, -47, -90, 2000);
-	chassis.moveToPose(-75, -75, -180, 2000, {.forwards = false});
-
-
-
-
-
-
-
-
-	
-
-	//red left
-	/*chassis.moveToPose(63, -45, 90,2000, {.forwards = true,  .minSpeed = 60});
-	chassis.moveToPose(-15, -40, 90,2000, {.forwards = false,  .minSpeed = 60});
-	
+	delay(1000);
+	chassis.moveToPose(-49, -47, 35, 2000, {.forwards = false});
+	chassis.moveToPose(-60, -65, 35, 2000, {.forwards = false});
 	chassis.waitUntilDone();
+	delay(1000);
 	clamp.toggle();
+	intake.move(0);
 	delay(1000);
-	intake.move(-100); //ring 1
+	chassis.moveToPose(-49, -47, 35, 2000, {.forwards = true});
 	delay(1000);
-/*
-	chassis.moveToPose(-15, -40,0,2000, {.forwards = true,  .minSpeed = 60});
-	chassis.moveToPose(-12, -20, 0,2000, {.forwards = true,  .minSpeed = 60});
-	chassis.moveToPose(-12, -20, -90,2000, {.forwards = true,  .minSpeed = 60});
-	chassis.moveToPose(-35, -15, -90,2000, {.forwards = true,  .minSpeed = 60});
-	chassis.moveToPose(-35, -15, -25,2000, {.forwards = true,  .minSpeed = 60});
-
-	/*chassis.moveToPose(24, -47, 0, 2000, {.forwards = true});
-	chassis.moveToPose(24, -24, 0, 2000, {.forwards = true, .minSpeed = 80});
-	delay(1000); //ring 2
-	chassis.moveToPose(24, -24, 90, 2000, {.forwards = true, .minSpeed = 60}); //ring 2
-	chassis.moveToPose(53, -24, 90, 2000, {.forwards = true,  .minSpeed = 60});
-	delay(1000);
-	chassis.moveToPose(51, -24, 18, 2000, {.forwards = true,   .minSpeed = 60});
-	chassis.moveToPose(60, 9, 18, 2000, {.forwards = true, .minSpeed = 60}); //ring 3
-	delay(1000);
-	chassis.moveToPose(49, -10, 18, 1000, {.forwards = false,  .minSpeed = 60});
-	delay(1000);
-	chassis.turnToHeading(180, 2000);
-	delay(1000);
-	chassis.moveToPose(49, -69, 180, 3000, {.forwards = true,   .minSpeed = 60});
-	chassis.waitUntilDone(); 
-
-	chassis.moveToPose(49, -40, 180, 2000, {.forwards = false,   .minSpeed = 60});
-	delay(1000);
-	chassis.moveToPose(49, -40, 90, 2000, {.forwards = true,   .minSpeed = 90});
-	chassis.moveToPose(63, -45, 90, 2000, {.forwards = true,   .minSpeed = 90});
-
-	chassis.moveToPose(63, -45, -45, 2000, {.forwards = true, .minSpeed = 90});
-
-	chassis.moveToPose(75, -75, -45, 2000, {.forwards = false,  .minSpeed = 90}); //drop goal 
-	clamp.toggle();
-	intake.move(0);*/
-
-
-
-
+	chassis.moveToPose(-49, -47, 0, 2000, {.forwards = false});
 
 }
 
