@@ -2,6 +2,7 @@
 #include "lemlib/api.hpp" // IWYU pragma: keep
 #include "lemlib/chassis/trackingWheel.hpp"
 #include "pros/motors.h"
+#include "pros/rtos.h"
 
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 pros::MotorGroup right_drive({20,5,7},pros::MotorGearset::blue);    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
@@ -26,7 +27,7 @@ lemlib::Drivetrain drivetrain(
 	480, // drivetrain rpm is 360
 	2 // horizontal drift is 2 (for now)
 );
-lemlib::TrackingWheel horizontal_tracking_wheel(&horizontal_encoder, lemlib::Omniwheel::NEW_2, -2.125);
+lemlib::TrackingWheel horizontal_tracking_wheel(&horizontal_encoder, lemlib::Omniwheel::NEW_2, -3.375);
 
 lemlib::OdomSensors sensors(
 	nullptr, // vertical tracking wheel 1, set to null
@@ -352,7 +353,7 @@ void skills(){
 }
 
 void skills2(){ 
-	chassis.setPose(0, -61, 0);
+	chassis.setPose(0, 0, 0);
 
 	//alliance stake
 	secondStage.move(-127);
@@ -360,25 +361,43 @@ void skills2(){
 	secondStage.move(0);
 
 	//red right
-	chassis.moveToPose(0, -47, 0, 1000, {.forwards = true,  .minSpeed = 60}); //mg clamp
-	delay(1000);
-	chassis.moveToPose(0, -47, -90, 1000, {.forwards = true,   .minSpeed = 60});
-	chassis.moveToPose(27, -47, -90,1000, {.forwards = false,  .minSpeed = 60});
+	chassis.moveToPoint(0, 9, 1000, {.forwards = true,  .minSpeed = 60}); //mg clamp
+	delay(500);
+	chassis.turnToHeading(-90,1000);
+	chassis.moveToPoint(26, 9, 1000, {.forwards = false,  .minSpeed = 60});
 	chassis.waitUntilDone();
 	clamp.toggle();
-	delay(1000);
+	delay(500);
 	intake.move(-100); //ring 1
+	delay(500);
+	chassis.turnToHeading(0, 1000);
+	chassis.moveToPoint(26, 39, 1000, {.forwards = true, .minSpeed = 80});
+	delay(500); //ring 2
+	chassis.turnToHeading(90,1000);
+	chassis.moveToPoint(53, 39, 1000, {.forwards = true,  .minSpeed = 60});
 	delay(1000);
-	chassis.moveToPose(24, -47, 0, 1000, {.forwards = true});
-	chassis.moveToPose(24, -24, 0, 1000, {.forwards = true, .minSpeed = 80});
-	delay(1000); //ring 2
-	chassis.moveToPose(24, -24, 90, 1000, {.forwards = true, .minSpeed = 60}); //ring 2
-	chassis.moveToPose(53, -24, 90, 1000, {.forwards = true,  .minSpeed = 60});
+	chassis.turnToHeading(27,1000);
+	lebron.move_absolute(485,127); //ring height
+	chassis.moveToPoint(65, 60, 2000, {.forwards = true, .minSpeed = 60}); //wallie
 	delay(1000);
-	chassis.moveToPose(51, -24, 18, 1000, {.forwards = true,   .minSpeed = 60});
-	chassis.moveToPose(60, 9, 18, 2000, {.forwards = true, .minSpeed = 60}); //ring 3
-	delay(1000);
-	chassis.moveToPose(49, -10, 18, 2000, {.forwards = false,  .minSpeed = 60});
+	chassis.turnToHeading(90,1000);
+	delay(500);
+	lebron.move_absolute(1700,127); //stake height
+	chassis.moveToPoint(68, 60, 1000, {.forwards = true, .minSpeed = 60});
+	chassis.moveToPoint(65, 60, 1000, {.forwards=false,.minSpeed = 80});
+	lebron.move_absolute(0, 127); //start height
+	chassis.turnToHeading(180, 1000);
+	chassis.moveToPoint(65, 36, 2000, {.forwards = true, .minSpeed = 60});
+	chassis.turnToHeading(172, 1000);
+	chassis.moveToPoint(64, 10, 172, {.forwards = true, .minSpeed = 60});
+	chassis.turnToHeading(346, 1000);
+	chassis.moveToPoint(65, 0.25, 346, {.forwards = false, .maxSpeed = 60});
+
+
+
+
+
+	/*
 	delay(1000);
 	chassis.turnToHeading(180, 2000);
 	delay(1000);
@@ -433,7 +452,7 @@ void skills2(){
 	chassis.moveToPose(-49, -47, 35, 2000, {.forwards = true});
 	delay(1000);
 	chassis.moveToPose(-49, -47, 0, 2000, {.forwards = false});
-
+*/
 }
 
 void autonomous(){
@@ -445,9 +464,6 @@ void autonomous(){
 	//redleftside();
 }
 
-
-bool side = true; //blue = false; red = true
-bool check = false;
 
 void opcontrol() {
 
@@ -464,24 +480,6 @@ void opcontrol() {
 		pros::lcd::set_text(2, std::to_string(optical.get_hue()));
 
 		//Intake
-		double hue = optical.get_hue();
-		optical.set_led_pwm(100);
-		check = false;
-		if (side && hue >= 200){ //if side is red color is blue
-			check = true;
-			intake.move(0);
-			delay(170);
-			intake.move(127);
-			check = false;
-		}
-		else if (side == false && hue <= 17){ //if side is blue color is red
-			check = true;
-			intake.move(0);
-			delay(170);
-			intake.move(127);
-			check = false;
-		}
-		delay(10);
 		if(master.get_digital(DIGITAL_L2)){
 			intake.move(127);
 		}
@@ -491,11 +489,6 @@ void opcontrol() {
 		else{
 			intake.move(0);
 		}
-
-		if(master.get_digital_new_press(DIGITAL_X)){
-			side = !side;
-		}
-
 
 		//Arm
 		if(master.get_digital_new_press(DIGITAL_R1)){
