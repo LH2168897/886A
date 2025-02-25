@@ -3,6 +3,7 @@
 #include "lemlib/chassis/trackingWheel.hpp"
 #include "pros/motors.h"
 #include "pros/rtos.h"
+#include <ctime>
 
 pros::Controller master(pros::E_CONTROLLER_MASTER);
 pros::MotorGroup right_drive({20,5,7},pros::MotorGearset::blue);    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
@@ -39,9 +40,9 @@ lemlib::OdomSensors sensors(
 
 // lateral PID controller
 lemlib::ControllerSettings lateral_controller(
-	15, // proportional gain (kP)
+	10, // proportional gain (kP)
 	0, // integral gain (kI)
-	5, // derivative gain (kD)
+	15, // derivative gain (kD)
 	3, // anti windup
 	1, // small error range, in inches
 	100, // small error range timeout, in milliseconds
@@ -361,7 +362,7 @@ void skills2(){
 	secondStage.move(0);
 
 	//red right
-	chassis.moveToPoint(0, 9, 1000, {.forwards = true,  .minSpeed = 60}); //mg clamp
+	chassis.moveToPoint(0, 9, 1000, {.forwards = true,  .minSpeed = 45}); //mg clamp
 	delay(500);
 	chassis.turnToHeading(-90,1000);
 	chassis.moveToPoint(26, 9, 1000, {.forwards = false,  .minSpeed = 60});
@@ -378,20 +379,23 @@ void skills2(){
 	delay(1000);
 	chassis.turnToHeading(27,1000);
 	lebron.move_absolute(485,127); //ring height
-	chassis.moveToPoint(65, 60, 2000, {.forwards = true, .minSpeed = 60}); //wallie
+	chassis.moveToPoint(69, 67, 2000, {.forwards = true, .minSpeed = 60}); //wallie
 	delay(1000);
 	chassis.turnToHeading(90,1000);
 	delay(500);
+	intake.move(0);
 	lebron.move_absolute(1700,127); //stake height
+	delay(1000);
+	intake.move(-100);
 	chassis.moveToPoint(68, 60, 1000, {.forwards = true, .minSpeed = 60});
 	chassis.moveToPoint(65, 60, 1000, {.forwards=false,.minSpeed = 80});
 	lebron.move_absolute(0, 127); //start height
 	chassis.turnToHeading(180, 1000);
 	chassis.moveToPoint(65, 36, 2000, {.forwards = true, .minSpeed = 60});
 	chassis.turnToHeading(172, 1000);
-	chassis.moveToPoint(64, 10, 172, {.forwards = true, .minSpeed = 60});
+	chassis.moveToPoint(67, 10, 172, {.forwards = true, .minSpeed = 60});
 	chassis.turnToHeading(346, 1000);
-	chassis.moveToPoint(65, 0.25, 346, {.forwards = false, .maxSpeed = 60});
+	chassis.moveToPoint(67, 0.35, 346, {.forwards = false, .maxSpeed = 60});
 
 
 
@@ -455,8 +459,47 @@ void skills2(){
 */
 }
 
+void skillsActual(){
+	chassis.setPose(0,-60,0);
+	
+	//alliance stake
+	secondStage.move(-127);
+	delay(1000);
+	secondStage.move(0);
+
+	//red right
+	chassis.moveToPoint(0, -49, 1000, {.forwards = true}); //mg clamp
+	delay(500);
+	chassis.turnToHeading(-90,1000);
+	chassis.moveToPoint(24, -49, 1500, {.forwards = false,  .minSpeed = 60});
+	chassis.waitUntilDone();
+	clamp.toggle();
+	delay(500); 
+	chassis.turnToHeading(0, 2000); 
+	intake.move(-100); //ring 1
+	chassis.moveToPoint(24, -23, 1500); // first ring
+	chassis.turnToHeading(45, 2000);
+	chassis.moveToPoint(46, 26, 2000); // second ring
+	chassis.waitUntil(5);
+	lebron.move_absolute(485,127); //ring height
+	chassis.waitUntilDone();
+	chassis.moveToPoint(37, 10 , 3000, {.forwards = false, .minSpeed = 40});
+	chassis.waitUntilDone();
+	secondStage.move(0);
+	chassis.turnToHeading(90, 2000);
+	chassis.waitUntilDone();
+	lebron.move_absolute(1400,127); //ring height
+	chassis.waitUntilDone();
+	chassis.moveToPoint(70, 4,  2000); //go grab the other ring 
+	lebron.move_absolute(1800,127); //ring height
+	chassis.moveToPoint(47, 6 , 3000, {.forwards = false, .minSpeed = 40});
+	chassis.turnToHeading(90, 2000);
+	chassis.moveToPoint(48, -54 , 3000, {.forwards = false, .minSpeed = 40});
+	
+}
 void autonomous(){
-	skills2();
+	skillsActual();
+	//skills2();
 	//skills();
 	//bluerightside();
 	//blueleftside();
