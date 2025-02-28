@@ -2,74 +2,75 @@
 #include "lemlib/api.hpp" // IWYU pragma: keep
 #include "lemlib/chassis/trackingWheel.hpp"
 #include "pros/motors.h"
-#include "pros/rtos.h"
-#include <ctime>
+#include <algorithm>
 
-pros::Controller master(pros::E_CONTROLLER_MASTER);
-pros::MotorGroup right_drive({20,5,7},pros::MotorGearset::blue);    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
-pros::MotorGroup left_drive({-16,-10,-9},pros::MotorGearset::blue);  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
-pros::Motor secondStage(14);
-pros::MotorGroup intake({3,14});
-pros::Motor suck(3);
-pros::Motor lebron(4);
-pros::adi::Pneumatics clamp('h',false); 
-pros::adi::Pneumatics doinker('a',false);
-pros::Imu imu(2);
-pros::Optical optical(19);
-// create a v5 rotation sensor on port 1
-pros::Rotation horizontal_encoder(13);
+/**
+ * A callback function for LLEMU's center button.
+ *
+ * When this callback is fired, it will toggle line 2 of the LCD text between
+ * "I was pressed!" and nothing.
+ */
+
+	pros::Controller master(pros::E_CONTROLLER_MASTER);
+	pros::MotorGroup right_drive({20,5,7},pros::MotorGearset::blue);    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
+	pros::MotorGroup left_drive({-16,-10,-9},pros::MotorGearset::blue);  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
+	pros::Motor secondStage(14);
+	pros::MotorGroup intake({3,14});
+	pros::Motor suck(3);
+	pros::Motor lebron(4);
+	pros::adi::Pneumatics clamp('h',false); 
+	pros::adi::Pneumatics doinker('a',false);
+	pros::Imu imu(2);
+	pros::Optical optical(19);
+	// create a v5 rotation sensor on port 1
+pros::Rotation vertical_encoder(13);
 
 // drivetrain settings
-lemlib::Drivetrain drivetrain(
-	&left_drive, // left motor group
+lemlib::Drivetrain drivetrain(&left_drive, // left motor group
 	&right_drive, // right motor group
 	12.625, // 10 inch track width
 	lemlib::Omniwheel::NEW_275, // using new 4" omnis
 	480, // drivetrain rpm is 360
 	2 // horizontal drift is 2 (for now)
 );
-lemlib::TrackingWheel horizontal_tracking_wheel(&horizontal_encoder, lemlib::Omniwheel::NEW_2, -3.375);
+lemlib::TrackingWheel vertical_tracking_wheel(&vertical_encoder, lemlib::Omniwheel::NEW_2, -1.125);
 
-lemlib::OdomSensors sensors(
-	nullptr, // vertical tracking wheel 1, set to null
+lemlib::OdomSensors sensors(&vertical_tracking_wheel, // vertical tracking wheel 1, set to null
 	nullptr, // vertical tracking wheel 2, set to nullptr as we are using IMEs
-	&horizontal_tracking_wheel, // horizontal tracking wheel 1
+	nullptr, // horizontal tracking wheel 1
 	nullptr, // horizontal tracking wheel 2, set to nullptr as we don't have a second one
 	&imu // inertial sensor
 );
 
 // lateral PID controller
-lemlib::ControllerSettings lateral_controller(
-	10, // proportional gain (kP)
-	0, // integral gain (kI)
-	15, // derivative gain (kD)
-	3, // anti windup
-	1, // small error range, in inches
-	100, // small error range timeout, in milliseconds
-	3, // large error range, in inches
-	500, // large error range timeout, in milliseconds
-	20 // maximum acceleration (slew)
+lemlib::ControllerSettings lateral_controller(15, // proportional gain (kP)
+                                              0, // integral gain (kI)
+                                              5, // derivative gain (kD)
+                                              3, // anti windup
+                                              1, // small error range, in inches
+                                              100, // small error range timeout, in milliseconds
+                                              3, // large error range, in inches
+                                              500, // large error range timeout, in milliseconds
+                                              20 // maximum acceleration (slew)
 );
 
 // angular PID controller
-lemlib::ControllerSettings angular_controller(
-	2, // proportional gain (kP)
-	0, // integral gain (kI)
-	10, // derivative gain (kD)
-	3, // anti windup
-	1, // small error range, in degrees
-	100, // small error range timeout, in milliseconds
-	3, // large error range, in degrees
-	500, // large error range timeout, in milliseconds
-	0 // maximum acceleration (slew)
+lemlib::ControllerSettings angular_controller(2, // proportional gain (kP)
+                                              0, // integral gain (kI)
+                                              10, // derivative gain (kD)
+                                              3, // anti windup
+                                              1, // small error range, in degrees
+                                              100, // small error range timeout, in milliseconds
+                                              3, // large error range, in degrees
+                                              500, // large error range timeout, in milliseconds
+                                              0 // maximum acceleration (slew)
 );
 
 // create the chassis
-lemlib::Chassis chassis(
-	drivetrain, // drivetrain settings
-	lateral_controller, // lateral PID settings
-	angular_controller, // angular PID settings
-	sensors // odometry sensors
+lemlib::Chassis chassis(drivetrain, // drivetrain settings
+                        lateral_controller, // lateral PID settings
+                        angular_controller, // angular PID settings
+                        sensors // odometry sensors
 );
 void on_center_button() {
 	static bool pressed = false;
@@ -81,27 +82,61 @@ void on_center_button() {
 	}
 }
 
+/**
+ * Runs initialization code. This occurs as soon as the program is started.
+ *
+ * All other competition modes are blocked by initialize; it is recommended
+ * to keep execution time for this mode under a few seconds.
+ */
+// initialize function. Runs on program startup
 void initialize() {
 	left_drive.set_brake_mode(E_MOTOR_BRAKE_BRAKE);
 	right_drive.set_brake_mode(E_MOTOR_BRAKE_BRAKE);
-	pros::lcd::initialize(); // initialize brain screen
-	chassis.calibrate(); // calibrate sensors
-	// print position to brain screen
-	pros::Task screen_task([&]() {
-		while (true) {
-			// print robot location to the brain screen
-			pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
-			pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
-			pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
-			// delay to save resources
-			pros::delay(20);
-		}
-	});
+    pros::lcd::initialize(); // initialize brain screen
+    chassis.calibrate(); // calibrate sensors
+    // print position to brain screen
+    pros::Task screen_task([&]() {
+        while (true) {
+            // print robot location to the brain screen
+            pros::lcd::print(0, "X: %f", chassis.getPose().x); // x
+            pros::lcd::print(1, "Y: %f", chassis.getPose().y); // y
+            pros::lcd::print(2, "Theta: %f", chassis.getPose().theta); // heading
+            // delay to save resources
+            pros::delay(20);
+        }
+    });
 }
-
+/**
+ * Runs while the robot is in the disabled state of Field Management System or
+ * the VEX Competition Switch, following either autonomous or opcontrol. When
+ * the robot is enabled, this task will exit.
+ */
 void disabled() {}
 
+/**
+ * Runs after initialize(), and before autonomous when connected to the Field
+ * Management System or the VEX Competition Switch. This is intended for
+ * competition-specific initialization routines, such as an autonomous selector
+ * on the LCD.
+ *
+ * This task will exit when the robot is enabled and autonomous or opcontrol
+ * starts.
+ */
 void competition_initialize() {}
+
+/**
+ * Runs the user autonomous code. This function will be started in its own task
+ * with the default priority and stack size whenever the robot is enabled via
+ * the Field Management System or the VEX Competition Switch in the autonomous
+ * mode. Alternatively, this function may be called in initialize or opcontrol
+ * for non-competition testing purposes.
+ *
+ * If the robot is disabled or communications is lost, the autonomous task
+ * will be stopped. Re-enabling the robot will restart the task, not re-start it
+ * from where it left off.
+ */
+
+
 
 void powerDrive(int forward, int turn){
 	left_drive.move(forward+turn);
@@ -150,7 +185,7 @@ void movep(double Distance, int max_speed, int timeOut = 1000){
 			pasterror=error;
 			delay(20);
 		}
-		powerDrive ( 0,0);
+		 powerDrive ( 0,0);
 		left_drive.move(0);
 		right_drive.move(0);
 	}
@@ -168,7 +203,7 @@ void Turndrive(double degrees, int timeLimit = 3000){
 	while ((pros:: millis() - trackingTime < 1000) && (pros::millis()-timeout < timeLimit)){
 		error = degrees - imu.get_rotation();
 		derivative=pasterror-error;
-		if (error > 0.5){
+		if (abs(error) > 0.5){
 			trackingTime = pros::millis();
 					}
 		powerDrive(0, error *kP - derivative*kD);
@@ -354,7 +389,7 @@ void skills(){
 }
 
 void skills2(){ 
-	chassis.setPose(0, 0, 0);
+	chassis.setPose(0, -61, 0);
 
 	//alliance stake
 	secondStage.move(-127);
@@ -362,50 +397,29 @@ void skills2(){
 	secondStage.move(0);
 
 	//red right
-	chassis.moveToPoint(0, 9, 1000, {.forwards = true,  .minSpeed = 45}); //mg clamp
-	delay(500);
-	chassis.turnToHeading(-90,1000);
-	chassis.moveToPoint(26, 9, 1000, {.forwards = false,  .minSpeed = 60});
+	chassis.moveToPose(0, -47, 0, 1000, {.forwards = true,  .minSpeed = 60}); //mg clamp
+	delay(1000);
+	chassis.moveToPose(0, -47, -90, 1000, {.forwards = true,   .minSpeed = 60});
+	chassis.moveToPose(27, -47, -90,1000, {.forwards = false,  .minSpeed = 60});
 	chassis.waitUntilDone();
 	clamp.toggle();
-	delay(500);
+	delay(1000);
 	intake.move(-100); //ring 1
-	delay(500);
-	chassis.turnToHeading(0, 1000);
-	chassis.moveToPoint(26, 39, 1000, {.forwards = true, .minSpeed = 80});
-	delay(500); //ring 2
-	chassis.turnToHeading(90,1000);
-	chassis.moveToPoint(53, 39, 1000, {.forwards = true,  .minSpeed = 60});
 	delay(1000);
-	chassis.turnToHeading(27,1000);
-	lebron.move_absolute(485,127); //ring height
-	chassis.moveToPoint(69, 67, 2000, {.forwards = true, .minSpeed = 60}); //wallie
+	chassis.moveToPose(24, -47, 0, 2000, {.forwards = true});
+	chassis.moveToPose(24, -24, 0, 2000, {.forwards = true, .minSpeed = 80});
+	delay(1000); //ring 2
+	chassis.moveToPose(24, -24, 90, 2000, {.forwards = true, .minSpeed = 60}); //ring 2
+	chassis.moveToPose(53, -24, 90, 2000, {.forwards = true,  .minSpeed = 60});
 	delay(1000);
-	chassis.turnToHeading(90,1000);
-	delay(500);
-	intake.move(0);
-	lebron.move_absolute(1700,127); //stake height
+	chassis.moveToPose(51, -24, 18, 2000, {.forwards = true,   .minSpeed = 60});
+	chassis.moveToPose(60, 9, 18, 2000, {.forwards = true, .minSpeed = 60}); //ring 3
 	delay(1000);
-	intake.move(-100);
-	chassis.moveToPoint(68, 60, 1000, {.forwards = true, .minSpeed = 60});
-	chassis.moveToPoint(65, 60, 1000, {.forwards=false,.minSpeed = 80});
-	lebron.move_absolute(0, 127); //start height
-	chassis.turnToHeading(180, 1000);
-	chassis.moveToPoint(65, 36, 2000, {.forwards = true, .minSpeed = 60});
-	chassis.turnToHeading(172, 1000);
-	chassis.moveToPoint(67, 10, 172, {.forwards = true, .minSpeed = 60});
-	chassis.turnToHeading(346, 1000);
-	chassis.moveToPoint(67, 0.35, 346, {.forwards = false, .maxSpeed = 60});
-
-
-
-
-
-	/*
+	chassis.moveToPose(49, -10, 18, 1000, {.forwards = false,  .minSpeed = 60});
 	delay(1000);
 	chassis.turnToHeading(180, 2000);
 	delay(1000);
-	chassis.moveToPose(49, -60, 180, 2000, {.forwards = true,   .minSpeed = 60});
+	chassis.moveToPose(49, -60, 180, 3000, {.forwards = true,   .minSpeed = 60});
 	chassis.waitUntilDone(); 
 
 	chassis.moveToPose(49, -40, 180, 2000, {.forwards = false,   .minSpeed = 60});
@@ -417,21 +431,20 @@ void skills2(){
 
 	chassis.moveToPose(70, -60, -30, 2000, {.forwards = false, .maxSpeed = 70}); //drop goal 
 	chassis.waitUntilDone();
-	delay(500);
+	delay(1000);
 	clamp.toggle();
 	intake.move(0);
-	
+
 	chassis.moveToPose(60, -41, -30, 2000);
 	delay(1000);
 	chassis.moveToPose(60, -41, 90, 2000);
 	
-	//red left
-	chassis.moveToPose(-15, -51, 90, 4000, {.forwards = false, .maxSpeed = 100}); //mg goal
-	chassis.moveToPose(-20, -51, 90, 2000, {.forwards = false, .maxSpeed = 55});
+	chassis.moveToPose(-18, -45, 90, 4000, {.forwards = false, .maxSpeed = 100}); //mg goal
+	chassis.moveToPose(-24, -45, 90, 4000, {.forwards = false, .maxSpeed = 55});
 	chassis.waitUntilDone();
 	delay(1000);
 	clamp.toggle();
-	chassis.moveToPose(-20, -51, 0, 2000); //ring 1
+	chassis.moveToPose(-19, -41, 0, 2000); //ring 1
 	intake.move(-100);
 	chassis.moveToPose(-19, -19, 0, 2000);
 	delay(1000);
@@ -440,73 +453,100 @@ void skills2(){
 	chassis.moveToPose(-45, -16, -35, 2000); //ring 3
 	chassis.moveToPose(-57, 8, -35, 2000);
 	chassis.moveToPose(-45, -16, -35, 2000, {.forwards = false});
-	chassis.moveToPose(-45, -16, -180, 2000); //ring4
-	chassis.moveToPose(-49, -45, -180, 3000);
+	chassis.moveToPose(-45, -16, -180, 2000);
+	chassis.moveToPose(-49, -45, -180, 2000);
 	chassis.moveToPose(-47, -45, -180, 2000);
 	chassis.moveToPose(-49, -45, -90, 2000);
 	chassis.moveToPose(-49, -47, -90, 2000);
-	delay(1000);
-	chassis.moveToPose(-49, -47, 35, 2000, {.forwards = false});
-	chassis.moveToPose(-60, -65, 35, 2000, {.forwards = false});
-	chassis.waitUntilDone();
-	delay(1000);
-	clamp.toggle();
-	intake.move(0);
-	delay(1000);
-	chassis.moveToPose(-49, -47, 35, 2000, {.forwards = true});
-	delay(1000);
-	chassis.moveToPose(-49, -47, 0, 2000, {.forwards = false});
-*/
-}
+	chassis.moveToPose(-75, -75, -180, 2000, {.forwards = false});
 
-void skillsActual(){
-	chassis.setPose(0,-60,0);
+
+
+
+
+
+
+
 	
-	//alliance stake
-	secondStage.move(-127);
-	delay(1000);
-	secondStage.move(0);
 
-	//red right
-	chassis.moveToPoint(0, -49, 1000, {.forwards = true}); //mg clamp
-	delay(500);
-	chassis.turnToHeading(-90,1000);
-	chassis.moveToPoint(24, -49, 1500, {.forwards = false,  .minSpeed = 60});
+	//red left
+	/*chassis.moveToPose(63, -45, 90,2000, {.forwards = true,  .minSpeed = 60});
+	chassis.moveToPose(-15, -40, 90,2000, {.forwards = false,  .minSpeed = 60});
+	
 	chassis.waitUntilDone();
 	clamp.toggle();
-	delay(500); 
-	chassis.turnToHeading(0, 2000); 
+	delay(1000);
 	intake.move(-100); //ring 1
-	chassis.moveToPoint(24, -23, 1500); // first ring
-	chassis.turnToHeading(45, 2000);
-	chassis.moveToPoint(46, 26, 2000); // second ring
-	chassis.waitUntil(5);
-	lebron.move_absolute(485,127); //ring height
-	chassis.waitUntilDone();
-	chassis.moveToPoint(37, 10 , 3000, {.forwards = false, .minSpeed = 40});
-	chassis.waitUntilDone();
-	secondStage.move(0);
-	chassis.turnToHeading(90, 2000);
-	chassis.waitUntilDone();
-	lebron.move_absolute(1400,127); //ring height
-	chassis.waitUntilDone();
-	chassis.moveToPoint(70, 4,  2000); //go grab the other ring 
-	lebron.move_absolute(1800,127); //ring height
-	chassis.moveToPoint(47, 6 , 3000, {.forwards = false, .minSpeed = 40});
-	chassis.turnToHeading(90, 2000);
-	chassis.moveToPoint(48, -54 , 3000, {.forwards = false, .minSpeed = 40});
-	
-}
-void autonomous(){
-	skillsActual();
-	//skills2();
-	//skills();
-	//bluerightside();
-	//blueleftside();
-	//redrightside();
-	//redleftside();
+	delay(1000);
+/*
+	chassis.moveToPose(-15, -40,0,2000, {.forwards = true,  .minSpeed = 60});
+	chassis.moveToPose(-12, -20, 0,2000, {.forwards = true,  .minSpeed = 60});
+	chassis.moveToPose(-12, -20, -90,2000, {.forwards = true,  .minSpeed = 60});
+	chassis.moveToPose(-35, -15, -90,2000, {.forwards = true,  .minSpeed = 60});
+	chassis.moveToPose(-35, -15, -25,2000, {.forwards = true,  .minSpeed = 60});
+
+	/*chassis.moveToPose(24, -47, 0, 2000, {.forwards = true});
+	chassis.moveToPose(24, -24, 0, 2000, {.forwards = true, .minSpeed = 80});
+	delay(1000); //ring 2
+	chassis.moveToPose(24, -24, 90, 2000, {.forwards = true, .minSpeed = 60}); //ring 2
+	chassis.moveToPose(53, -24, 90, 2000, {.forwards = true,  .minSpeed = 60});
+	delay(1000);
+	chassis.moveToPose(51, -24, 18, 2000, {.forwards = true,   .minSpeed = 60});
+	chassis.moveToPose(60, 9, 18, 2000, {.forwards = true, .minSpeed = 60}); //ring 3
+	delay(1000);
+	chassis.moveToPose(49, -10, 18, 1000, {.forwards = false,  .minSpeed = 60});
+	delay(1000);
+	chassis.turnToHeading(180, 2000);
+	delay(1000);
+	chassis.moveToPose(49, -69, 180, 3000, {.forwards = true,   .minSpeed = 60});
+	chassis.waitUntilDone(); 
+
+	chassis.moveToPose(49, -40, 180, 2000, {.forwards = false,   .minSpeed = 60});
+	delay(1000);
+	chassis.moveToPose(49, -40, 90, 2000, {.forwards = true,   .minSpeed = 90});
+	chassis.moveToPose(63, -45, 90, 2000, {.forwards = true,   .minSpeed = 90});
+
+	chassis.moveToPose(63, -45, -45, 2000, {.forwards = true, .minSpeed = 90});
+
+	chassis.moveToPose(75, -75, -45, 2000, {.forwards = false,  .minSpeed = 90}); //drop goal 
+	clamp.toggle();
+	intake.move(0);*/
+
+
+
+
+
 }
 
+void autonomous(){
+	skills2();
+//skills();
+//bluerightside();
+//blueleftside();
+//redrightside();
+//redleftside();
+}
+
+//auto 2
+
+
+
+/**
+ * Runs the operator control code. This function will be started in its own task
+ * with the default priority and stack size whenever the robot is enabled via
+ * the Field Management System or the VEX Competition Switch in the operator
+ * control mode.
+ *
+ * If no competition control is connected, this function will run immediately
+ * following initialize().
+ *
+ * If the robot is disabled or communications is lost, the
+ * operator control task will be stopped. Re-enabling the robot will restart the
+ * task, not resume it from where it left off.
+ */
+
+bool side = true; //blue = false; red = true
+bool check = false;
 
 void opcontrol() {
 
@@ -523,6 +563,24 @@ void opcontrol() {
 		pros::lcd::set_text(2, std::to_string(optical.get_hue()));
 
 		//Intake
+		double hue = optical.get_hue();
+       	optical.set_led_pwm(100);
+		check = false;
+		if (side && hue >= 200){ //if side is red color is blue
+			check = true;
+			intake.move(0);
+			delay(170);
+			intake.move(127);
+			check = false;
+		}
+		else if (side == false && hue <= 17){ //if side is blue color is red
+			check = true;
+			intake.move(0);
+			delay(170);
+			intake.move(127);
+			check = false;
+		}
+		delay(10);
 		if(master.get_digital(DIGITAL_L2)){
 			intake.move(127);
 		}
@@ -533,14 +591,35 @@ void opcontrol() {
 			intake.move(0);
 		}
 
+		if(master.get_digital_new_press(DIGITAL_X)){
+			side = !side;
+    	}
+
+
 		//Arm
 		if(master.get_digital_new_press(DIGITAL_R1)){
 			if (brownStatus != 2)
 				brownStatus++;
+			/*if (brownStatus == 0) {
+				lebron.move_absolute(100,75); //replace with collect thing
+				brownStatus++;
+			}
+			else if (brownStatus == 1) {
+				lebron.move_absolute(200,75); // replace with high stake
+				brownStatus++;
+			}*/
 		}
 		else if(master.get_digital_new_press(DIGITAL_R2)){
 			if (brownStatus != 0)
 				brownStatus--;
+			/*if (brownStatus == 1) {
+				lebron.move_absolute(0,75); //replace start
+				brownStatus++;
+			}
+			else if (brownStatus == 2) {
+				lebron.move_absolute(200,75); // replace with high stake
+				brownStatus++;
+			}*/
 		}
 		if (brownStatus == 0)
 			lebron.move_absolute(0,127); //start height
@@ -551,14 +630,23 @@ void opcontrol() {
 
 	
 		//pnu
-		if(master.get_digital_new_press(DIGITAL_A)){
+    	if(master.get_digital_new_press(DIGITAL_A)){
+      		//clamp.toggle();
 			doinker.toggle();
-		}
+    	}
+		//else if(master.get_digital_new_press(DIGITAL_B)){
+			//doinker.toggle();
+		//}
 		if(master.get_digital_new_press(DIGITAL_B)){
-			clamp.toggle();
+      		clamp.toggle();
+			//doinker.toggle();
 		}
-		
-		pros::delay(20);  
 
-	}	
+
+pros::delay(20);  
+ 
+           
+
+}	
+
 }
