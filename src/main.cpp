@@ -184,10 +184,26 @@ void Turndrive(double degrees, int timeLimit = 3000){
 
 void blueleftside(){
 	movep(-27,70);
-	delay(600);
+	delay(500);
 	clamp.toggle();
 	delay(200);
-	intake.move(-100);
+	Turndrive(-160);
+	movep(17,70);
+	delay(300);
+	Turndrive(2);
+	doinker.toggle();
+	delay(300);
+	movep(-20,70);
+	Turndrive(-135);
+	delay(300);
+	doinker.toggle();
+	delay(300);
+	Turndrive(27);
+	delay(300);
+	intake.move(-127);
+	delay(100);
+	movep(17,90);
+	/*intake.move(-100);
 	delay(200);
 	Turndrive(95);
 	intake.move(-100);// eating the first ring 
@@ -196,7 +212,7 @@ void blueleftside(){
 	Turndrive(185);
 	movep(200,60);
 	delay(1500);
-	movep(0,0);                                                                                                                                                                                                                                                           
+	movep(0,0);    */                                                                                                                                                                                                                                                       
 }
 
 void bluerightside(){
@@ -217,13 +233,13 @@ void bluerightside(){
 }
 
 void redrightside(){
-	movep(-27,70);
+	movep(-27,60);
 	delay(600);
 	clamp.toggle();
 	delay(200);
 	intake.move(-100);
 	delay(200);
-	Turndrive(-95);
+	Turndrive(-105);
 	intake.move(-100);// eating the first ring 
 	movep(15,70);
 	delay(1400);
@@ -235,6 +251,26 @@ void redrightside(){
 
 void redleftside(){
 	movep(-27,70);
+	delay(500);
+	clamp.toggle();
+	delay(200);
+	Turndrive(-160);
+	movep(17,70);
+	delay(300);
+	Turndrive(2);
+	doinker.toggle();
+	delay(300);
+	movep(-20,70);
+	Turndrive(-135);
+	delay(300);
+	doinker.toggle();
+	delay(300);
+	Turndrive(27);
+	delay(300);
+	intake.move(-127);
+	delay(100);
+	movep(17,90);
+	/*(-27,70);
 	delay(600);
 	clamp.toggle();
 	delay(200);
@@ -247,7 +283,7 @@ void redleftside(){
 	Turndrive(185);
 	movep(200,60);
 	delay(1500);
-	movep(0,0);
+	movep(0,0);*/
 }
 
 void skills(){
@@ -432,10 +468,10 @@ void skills2(){
 }
 
 void autonomous(){
-	skills2();
+	//skills2();
 	//skills();
 	//bluerightside();
-	//blueleftside();
+	blueleftside();
 	//redrightside();
 	//redleftside();
 }
