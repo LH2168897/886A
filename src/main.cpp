@@ -4,7 +4,7 @@
 #include "pros/motors.h"
 
 pros::Controller master(pros::E_CONTROLLER_MASTER);
-pros::MotorGroup right_drive({20,5,7},pros::MotorGearset::blue);    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
+pros::MotorGroup right_drive({20,5,12},pros::MotorGearset::blue);    // Creates a motor group with forwards ports 1 & 3 and reversed port 2
 pros::MotorGroup left_drive({-16,-10,-9},pros::MotorGearset::blue);  // Creates a motor group with forwards port 5 and reversed ports 4 & 6
 pros::Motor secondStage(14);
 pros::MotorGroup intake({3,14});
@@ -12,11 +12,11 @@ pros::Motor suck(3);
 pros::Motor lebron(4);
 pros::adi::Pneumatics clamp('h',false); 
 pros::adi::Pneumatics doinker('a',false);
-pros::Imu imu(2);
+pros::Imu imu(18);
 pros::Optical optical(19);
 // create a v5 rotation sensor on port 1
 pros::Rotation vertical_encoder(6);
-pros::Rotation horizontal_encoder(13);
+pros::Rotation horizontal_encoder(-13);
 
 // drivetrain settings
 lemlib::Drivetrain drivetrain(
@@ -27,8 +27,8 @@ lemlib::Drivetrain drivetrain(
 	480, // drivetrain rpm is 360
 	2 // horizontal drift is 2 (for now)
 );
-lemlib::TrackingWheel vertical_tracking_wheel(&vertical_encoder, lemlib::Omniwheel::NEW_2, 0.75);
-lemlib::TrackingWheel horizontal_tracking_wheel(&horizontal_encoder, lemlib::Omniwheel::NEW_2, 3.375);
+lemlib::TrackingWheel vertical_tracking_wheel(&vertical_encoder, lemlib::Omniwheel::NEW_2, -1.5);
+lemlib::TrackingWheel horizontal_tracking_wheel(&horizontal_encoder, lemlib::Omniwheel::NEW_2, -4.5);
 
 
 lemlib::OdomSensors sensors(
@@ -83,10 +83,11 @@ void on_center_button() {
 }
 
 void initialize() {
+	chassis.calibrate(); // calibrate sensors
 	left_drive.set_brake_mode(E_MOTOR_BRAKE_BRAKE);
 	right_drive.set_brake_mode(E_MOTOR_BRAKE_BRAKE);
     pros::lcd::initialize(); // initialize brain screen
-    chassis.calibrate(); // calibrate sensors
+
     // print position to brain screen
     pros::Task screen_task([&]() {
         while (true) {
@@ -364,10 +365,11 @@ void skills2(){
 	secondStage.move(0);
 
 	//red right
-	chassis.moveToPose(0, -47, 0, 1000, {.forwards = true,  .minSpeed = 60}); //mg clamp
+	chassis.moveToPose(0, -48, 0, 2000, {.forwards = true,  .minSpeed = 60}); //mg clamp
 	delay(1000);
-	chassis.moveToPose(0, -47, -90, 1000, {.forwards = true,   .minSpeed = 60});
-	chassis.moveToPose(27, -47, -90,1000, {.forwards = false,  .minSpeed = 60});
+	chassis.moveToPose(0, -48, -90, 2000, {.forwards = true,   .minSpeed = 60});
+	chassis.waitUntilDone();
+	chassis.moveToPose(27, -48, -90,2000, {.forwards = false,  .minSpeed = 60});
 	chassis.waitUntilDone();
 	clamp.toggle();
 	delay(1000);
@@ -426,7 +428,6 @@ void skills2(){
 	chassis.moveToPose(-49, -45, -90, 2000);
 	chassis.moveToPose(-49, -47, -90, 2000);
 	chassis.moveToPose(-75, -75, -180, 2000, {.forwards = false});
-
 
 }
 
